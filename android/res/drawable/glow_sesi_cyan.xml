@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pendaran sian lembut untuk latar sesi asisten (kanvas Orbit). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="160dp"
+        android:startColor="#5919B4E8"
+        android:endColor="#0019B4E8"/>
+</shape>

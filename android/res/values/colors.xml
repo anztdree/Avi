@@ -26,4 +26,16 @@
     <color name="kaca_pil">#E6FFFFFF</color>
     <color name="glow_cyan">#2E19B4E8</color>
     <color name="glow_indigo">#1C2F6BFF</color>
+
+    <!-- ===== Palet SESI ASISTEN (tahan tombol home) — SELALU gelap.
+         Tampilan overlay dipisah dari tema aplikasi supaya orb menyala
+         dan wajah asisten konsisten di HP mana pun (pola Siri). ===== -->
+    <color name="sesi_dasar">#F2050A14</color>
+    <color name="sesi_teks">#F2F7FF</color>
+    <color name="sesi_samping">#8FA3C8</color>
+    <color name="sesi_aksen">#5EC8F8</color>
+    <color name="sesi_orb">#38BDF8</color>
+    <color name="sesi_kartu">#C30E1A30</color>
+    <color name="sesi_garis">#265EC8F8</color>
+    <color name="sesi_pil">#B30E1A30</color>
 </resources>

@@ -10,19 +10,27 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
 
 /**
- * Sesi ASISTEN PERANGKAT AVI — kartu obrolan TRANSPARAN melayang di atas
- * aplikasi mana pun, persis tampilan Google Assistant saat dipanggil
- * lewat tahan tombol home / sapu sudut bawah.
+ * Sesi ASISTEN PERANGKAT AVI — tampilan "Orbit": layar penuh imersif
+ * saat pemilik MENAHAN TOMBOL HOME.
  *
- * Isi kartu = mesin Mode Live yang sama (LiveEngine): dengar → pikir →
- * jawab → dengar lagi; hening beberapa detik = AVI pamit lalu kartu
- * menutup sendiri, dan pemilik kembali ke aplikasi yang tadi dibuka.
+ * Sengaja BERBEDA dari Google Assistant (ya itu poinnya — GA punya wajah
+ * sendiri, AVI juga punya wajah sendiri): kanvas gelap JARVIS dengan
+ * pendaran sian/indigo, orb raksasa yang bernapas di tengah layar,
+ * ucapan pemilik besar di tengah, jawaban AVI di kartu kaca, dan animasi
+ * masuk yang lembut setiap kali dipanggil.
+ *
+ * Isi = mesin Mode Live yang sama (LiveEngine): dengar → pikir → jawab →
+ * dengar lagi; hening beberapa detik = AVI pamit lalu sesi menutup
+ * sendiri dan pemilik kembali ke aplikasi yang tadi dibuka.
  */
 public class AviSession extends VoiceInteractionSession implements LiveEngine.Pendengar {
 
+    private View akar;
     private OrbView orb;
     private TextView tvStatus, tvAnda, tvAvi;
     private LiveEngine mesin;
@@ -33,26 +41,28 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
 
     @Override
     public View onCreateContentView() {
-        View isi = getLayoutInflater().inflate(R.layout.overlay_avisession, null);
-        orb = isi.findViewById(R.id.orbSesi);
-        tvStatus = isi.findViewById(R.id.tvStatusSesi);
-        tvAnda = isi.findViewById(R.id.tvAndaSesi);
-        tvAvi = isi.findViewById(R.id.tvAviSesi);
-        orb.setWarnaOrb(AviBrain.warnaAksen(getContext()));
+        akar = getLayoutInflater().inflate(R.layout.overlay_avisession, null);
+        orb = akar.findViewById(R.id.orbSesi);
+        tvStatus = akar.findViewById(R.id.tvStatusSesi);
+        tvAnda = akar.findViewById(R.id.tvAndaSesi);
+        tvAvi = akar.findViewById(R.id.tvAviSesi);
+        // sesi selalu di kanvas gelap → orb sian elektrik (bukan warna tema)
+        orb.setWarnaOrb(0xFF38BDF8);
 
-        isi.findViewById(R.id.btnTutupSesi).setOnClickListener(v -> finish());
+        akar.findViewById(R.id.btnTutupSesi).setOnClickListener(v -> finish());
         orb.setOnClickListener(v -> {
             if (mesin == null) return;
             int k = orb.getKeadaan();
             if (k == OrbView.BICARA) mesin.potongTts();        // barge-in
             else if (k == OrbView.SIAP) mesin.dengarkanLagi();
         });
-        return isi;
+        return akar;
     }
 
     @Override
     public void onShow(Bundle args, int showFlags) {
-        // jendela transparan tanpa selubung gelap — kartu melayang bersih
+        // jendela MENUTUPI LAYAR — kanvas gelap kita sendiri yang menutupi
+        // aplikasi di bawah (tanpa dim tambahan dari sistem).
         Dialog jendela = getWindow();
         if (jendela != null && jendela.getWindow() != null) {
             Window w = jendela.getWindow();
@@ -60,13 +70,31 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
             w.setDimAmount(0f);
             w.setGravity(Gravity.BOTTOM);
             w.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
+                    ViewGroup.LayoutParams.MATCH_PARENT);
         }
+
+        // animasi masuk: seluruh panggung naik + memudar, orb melebar
+        // dengan pendaran singkat — sesi terasa "dipanggil", bukan muncul.
+        if (akar != null) {
+            akar.setAlpha(0f);
+            akar.setTranslationY(dip(30));
+            akar.animate().alpha(1f).translationY(0f)
+                    .setDuration(260L)
+                    .setInterpolator(new DecelerateInterpolator(1.6f))
+                    .start();
+            orb.setScaleX(0.82f);
+            orb.setScaleY(0.82f);
+            orb.animate().scaleX(1f).scaleY(1f)
+                    .setDuration(360L)
+                    .setInterpolator(new OvershootInterpolator(1.05f))
+                    .start();
+        }
+
         if (mesin == null) mesin = new LiveEngine(getContext(), this);
         if (mesin.izinMicAda()) {
             mesin.mulai();
         } else {
-            tvStatus.setText("Izin mikrofon belum ada — buka aplikasi AVI sekali dulu.");
+            status("Izin mikrofon belum ada — buka aplikasi AVI sekali dulu.");
         }
     }
 
@@ -81,6 +109,10 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
         super.onDestroy();
     }
 
+    private float dip(float nilai) {
+        return nilai * getContext().getResources().getDisplayMetrics().density;
+    }
+
     // ================= peristiwa dari mesin (thread utama) =================
 
     @Override public void keadaan(int k) {
@@ -92,11 +124,23 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
     }
 
     @Override public void transkripAnda(String teks) {
-        if (tvAnda != null) tvAnda.setText(teks);
+        if (tvAnda == null) return;
+        if (teks == null || teks.trim().length() == 0) {
+            tvAnda.setVisibility(View.GONE);
+            return;
+        }
+        tvAnda.setVisibility(View.VISIBLE);
+        tvAnda.setText(teks);
     }
 
     @Override public void teksAvi(String teks) {
-        if (tvAvi != null) tvAvi.setText(teks);
+        if (tvAvi == null) return;
+        if (teks == null || teks.trim().length() == 0) {
+            tvAvi.setVisibility(View.GONE);
+            return;
+        }
+        tvAvi.setVisibility(View.VISIBLE);
+        tvAvi.setText(teks);
     }
 
     @Override public void rms(float rmsdb) {

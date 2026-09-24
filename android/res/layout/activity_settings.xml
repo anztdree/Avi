@@ -16,7 +16,7 @@
             android:paddingBottom="3dp"/>
         <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Perubahan langsung berlaku — sentuh Simpan untuk memastikan. (b7)"
+            android:text="Perubahan langsung berlaku — sentuh Simpan untuk memastikan. (b8)"
             android:textColor="@color/avi_teks_samping" android:textSize="13sp"
             android:paddingBottom="14dp"/>
 

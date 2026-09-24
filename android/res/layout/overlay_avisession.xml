@@ -1,80 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Kartu obrolan transparan ala Google Assistant — identitas Arc:
-     panel gelap, wordmark + titik status, orb sian, tutup pil kaca. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+    SESI ASISTEN AVI — "Orbit": layar penuh imersif saat tombol home
+    ditahan. Bukan kartu kecil, bukan tiruan Google Assistant: kanvas
+    gelap JARVIS dengan pendaran sian/indigo, orb raksasa sebagai wajah,
+    ucapan pemilik besar di tengah, jawaban di kartu kaca.
+    Palet sesi_* dikunci gelap — konsisten di tema/HP mana pun (pola Siri).
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="@drawable/card_session"
-    android:padding="22dp">
+    android:layout_height="match_parent"
+    android:background="@color/sesi_dasar">
+
+    <!-- pendaran dekoratif dua sudut -->
+    <View
+        android:layout_width="320dp"
+        android:layout_height="320dp"
+        android:layout_gravity="top|start"
+        android:layout_marginLeft="-90dp"
+        android:layout_marginTop="-40dp"
+        android:background="@drawable/glow_sesi_cyan"/>
+
+    <View
+        android:layout_width="360dp"
+        android:layout_height="360dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginRight="-110dp"
+        android:layout_marginBottom="-60dp"
+        android:background="@drawable/glow_sesi_indigo"/>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <ImageView
-            android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/orb_mini"
-            android:contentDescription=""/>
-
-        <TextView
-            android:layout_width="0dp"
+        <!-- ===== kepala: wordmark + tombol ✕ ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:paddingTop="34dp"
+            android:paddingBottom="6dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/orb_mini"
+                android:contentDescription=""/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="9dp"
+                android:text="AVI"
+                android:textColor="@color/sesi_samping"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.18"/>
+
+            <FrameLayout
+                android:id="@+id/btnTutupSesi"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/pil_tutup"
+                android:contentDescription="Tutup">
+
+                <ImageView
+                    android:layout_width="17dp"
+                    android:layout_height="17dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_tutup"
+                    android:contentDescription=""/>
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- ===== panggung tengah: orb + status + dialog ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginLeft="9dp"
-            android:text="AVI"
-            android:textColor="@color/avi_teks"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.10"/>
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingLeft="22dp"
+            android:paddingRight="22dp">
 
+            <com.avi.assistant.OrbView
+                android:id="@+id/orbSesi"
+                android:layout_width="232dp"
+                android:layout_height="232dp"/>
+
+            <TextView
+                android:id="@+id/tvStatusSesi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:textAllCaps="true"
+                android:letterSpacing="0.14"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:textColor="@color/sesi_aksen"
+                android:textSize="12sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tvAndaSesi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:visibility="gone"
+                android:textColor="@color/sesi_teks"
+                android:textSize="23sp"
+                android:textStyle="bold"
+                android:lineSpacingMultiplier="1.25"
+                android:maxLines="4"
+                android:ellipsize="end"/>
+
+            <TextView
+                android:id="@+id/tvAviSesi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/kartu_jawaban"
+                android:paddingLeft="18dp"
+                android:paddingRight="18dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:visibility="gone"
+                android:textColor="@color/sesi_teks"
+                android:textSize="15sp"
+                android:lineSpacingMultiplier="1.35"
+                android:maxLines="7"
+                android:ellipsize="end"/>
+        </LinearLayout>
+
+        <!-- ===== kaki: petunjuk halus ===== -->
         <TextView
-            android:id="@+id/btnTutupSesi"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tutup"
-            android:textColor="@color/avi_teks_samping"
-            android:textSize="13sp" android:textStyle="bold"
-            android:background="@drawable/btn_pil"
-            android:paddingLeft="15dp" android:paddingRight="15dp"
-            android:paddingTop="8dp" android:paddingBottom="8dp"/>
+            android:gravity="center"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="22dp"
+            android:text="Ketuk orb untuk bicara lagi • AVI tidur sendiri saat hening"
+            android:textColor="@color/sesi_samping"
+            android:textSize="11sp"
+            android:letterSpacing="0.06"/>
     </LinearLayout>
-
-    <com.avi.assistant.OrbView
-        android:id="@+id/orbSesi"
-        android:layout_width="136dp"
-        android:layout_height="136dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="8dp"/>
-
-    <TextView
-        android:id="@+id/tvStatusSesi"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textColor="@color/aksen_pudar"
-        android:textSize="13sp"/>
-
-    <TextView
-        android:id="@+id/tvAndaSesi"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:textColor="@color/avi_teks"
-        android:textSize="17sp"
-        android:textStyle="bold"
-        android:lineSpacingMultiplier="1.2"/>
-
-    <TextView
-        android:id="@+id/tvAviSesi"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textColor="@color/avi_teks"
-        android:textSize="15sp"
-        android:lineSpacingMultiplier="1.3"
-        android:maxLines="6"
-        android:ellipsize="end"/>
-</LinearLayout>
+</FrameLayout>
