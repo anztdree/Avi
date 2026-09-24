@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Identitas "AVI Arc": latar kanvas dengan pendaran sian di pojok
-         atas + indigo di bawah, status bar menyatu (gelap di semua kondisi). -->
-    <style name="TemaAVI" parent="android:Theme.Material.NoActionBar">
+    <!-- Tema CERAH — wajah utama AVI (pilihan pemilik). -->
+    <style name="TemaAVI" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@color/status_bar</item>
         <item name="android:windowBackground">@drawable/bg_main</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">@color/status_bar</item>
     </style>
 

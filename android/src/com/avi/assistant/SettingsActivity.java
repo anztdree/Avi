@@ -30,17 +30,16 @@ import java.util.Locale;
 
 /**
  * Pengaturan AVI: penyedia AI + API key, pilih model (fetch dari penyedia),
- * nama pemilik (teks bebas), TTS (suara + kecepatan), durasi hening Mode
- * Live, daya ingat AI, asisten perangkat, bersihkan riwayat.
- * Identitas visual Arc bersifat tunggal — tidak ada lagi pilihan tema/aksen
- * (keputusan pemilik: tampilan harus jauh berbeda & modern).
+ * nama pemilik (teks bebas), tema (cerah utama / gelap selingan — pilihan
+ * pemilik), TTS (suara + kecepatan), durasi hening Mode Live, daya ingat AI,
+ * asisten perangkat, bersihkan riwayat.
  * Semua perubahan tersimpan seketika; tombol Simpan memberi konfirmasi
  * eksplisit (permintaan pemilik).
  */
 public class SettingsActivity extends Activity {
 
-    private RadioGroup rgPenyedia, rgHening, rgIngat;
-    private RadioButton rbGemini, rbNvidia, rbOpenrouter;
+    private RadioGroup rgPenyedia, rgTema, rgHening, rgIngat;
+    private RadioButton rbGemini, rbNvidia, rbOpenrouter, rbCerah, rbGelap;
     private RadioButton rbH5, rbH8, rbH12, rbH15;
     private RadioButton rbIngat10, rbIngat20, rbIngat50;
     private EditText etKey, etNamaPemilik;
@@ -64,6 +63,9 @@ public class SettingsActivity extends Activity {
         setContentView(R.layout.activity_settings);
 
         rgPenyedia   = findViewById(R.id.rgPenyedia);
+        rgTema       = findViewById(R.id.rgTema);
+        rbCerah      = findViewById(R.id.rbCerah);
+        rbGelap      = findViewById(R.id.rbGelap);
         rbGemini     = findViewById(R.id.rbGemini);
         rbNvidia     = findViewById(R.id.rbNvidia);
         rbOpenrouter = findViewById(R.id.rbOpenrouter);
@@ -115,6 +117,9 @@ public class SettingsActivity extends Activity {
 
         String nama = AviBrain.pref(this).getString("nama_pemilik", "");
         etNamaPemilik.setText(nama);
+
+        if (AviBrain.temaGelap(this)) rbGelap.setChecked(true);
+        else rbCerah.setChecked(true);
 
         swTts.setChecked(AviBrain.pref(this).getBoolean("tts_on", false));
         int laju = AviBrain.pref(this).getInt("tts_rate", 100);
@@ -215,6 +220,14 @@ public class SettingsActivity extends Activity {
                 bTes.setText("Tes koneksi");
                 Toast.makeText(this, hasil, Toast.LENGTH_LONG).show();
             });
+        });
+
+        // ===== tema: cerah utama, gelap selingan (pilihan pemilik) =====
+        rgTema.setOnCheckedChangeListener((grup, id) -> {
+            if (sedangMengisi) return;
+            boolean gelap = id == R.id.rbGelap;
+            AviBrain.pref(this).edit().putString("tema", gelap ? "gelap" : "cerah").apply();
+            recreate();     // tema diterapkan lewat attachBaseContext
         });
 
         swTts.setOnCheckedChangeListener((tombol, nyala) -> {

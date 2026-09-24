@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Identitas Arc: file ini identik dengan values/ — tema gelap sian
-         dipaksa menyala di semua kondisi (migrasi di AviBrain). -->
+    <!-- ===== Palet GELAP — selingan (pemilik: mode gelap hanya selingan).
+         Identitas Arc semalam: kanvas lubang hitam + pendaran sian. ===== -->
     <color name="avi_bg">#05070F</color>
     <color name="avi_card">#0C1424</color>
     <color name="avi_card2">#111B31</color>
@@ -17,5 +17,12 @@
     <color name="garis_terang">#2A3C63</color>
     <color name="status_bar">#05070F</color>
     <color name="dasar_kode">#060B16</color>
+    <color name="teks_kode">#7CC4FF</color>
     <color name="kaca_sesi">#F20A101C</color>
+    <color name="kaca_ikon">#99111B31</color>
+    <color name="kaca_input">#D9111B31</color>
+    <color name="kaca_kartu">#B30C1424</color>
+    <color name="kaca_pil">#B3111B31</color>
+    <color name="glow_cyan">#2E19B4E8</color>
+    <color name="glow_indigo">#262F6BFF</color>
 </resources>

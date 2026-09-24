@@ -97,6 +97,20 @@
                 android:text="Bebas isi apa pun — cukup nama saja. Jika kosong, AVI memanggil Anda \u201CSir\u201D."/>
         </LinearLayout>
 
+        <!-- ===== Tampilan: cerah utama, gelap selingan (pilihan pemilik) ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Tampilan"/>
+            <RadioGroup
+                android:id="@+id/rgTema"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/rbCerah" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="Cerah (utama)"/>
+                <RadioButton android:id="@+id/rbGelap" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="Gelap"/>
+            </RadioGroup>
+        </LinearLayout>
+
         <!-- ===== Suara ===== -->
         <LinearLayout style="@style/KartuSetting">
             <TextView style="@style/JudulKartu" android:text="Suara"/>

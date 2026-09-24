@@ -67,6 +67,9 @@ public class MainActivity extends Activity {
         tvSalam.setText(sapaan());
         tvSub.setText("Ada yang bisa AVI bantu, " + AviBrain.namaPemilik(this) + "?");
 
+        // orb hero ikut warna aksen tema (biru pekat saat cerah, sian saat gelap)
+        ((OrbView) findViewById(R.id.orbHero)).setWarnaOrb(AviBrain.warnaAksen(this));
+
         findViewById(R.id.btnBaru).setOnClickListener(v -> konfirmasiBaru());
         findViewById(R.id.btnPengaturan).setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class)));
@@ -106,6 +109,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        // pemilik baru saja mengganti tema di Pengaturan → layar ini ikut
+        if (AviBrain.temaBerganti(this)) { recreate(); return; }
         if (!AviBrain.pref(this).getBoolean("onboarding_done", false)
                 && !AviBrain.apiKeyAktif(this)) {
             startActivity(new Intent(this, OnboardingActivity.class));
@@ -314,13 +319,13 @@ public class MainActivity extends Activity {
                     tvKode.setTextSize(13f);
                     tvKode.setTypeface(android.graphics.Typeface.MONOSPACE);
                     tvKode.setMaxWidth(maksLebar - px(34));
-                    tvKode.setTextColor(getResources().getColor(R.color.avi_teks, getTheme()));
+                    tvKode.setTextColor(getResources().getColor(R.color.teks_kode, getTheme()));
                     kartu.addView(tvKode);
 
                     TextView bSalin = new TextView(MainActivity.this);
                     bSalin.setText("Salin");
                     bSalin.setTextSize(12f);
-                    bSalin.setTextColor(AviBrain.warnaAksen(MainActivity.this));
+                    bSalin.setTextColor(getResources().getColor(R.color.teks_kode, getTheme()));
                     bSalin.setPadding(0, px(6), 0, 0);
                     bSalin.setOnClickListener(v -> {
                         ClipboardManager cm = (ClipboardManager)

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Kanvas identitas Arc: dasar lubang hitam kebiruan + pendaran sian
-     dari pojok kiri-atas dan indigo dari kanan-bawah. Dipakai sebagai
-     windowBackground tema — seluruh layar otomatis memakainya. -->
+<!-- Kanvas Arc: dasar warna tema + pendaran sian kiri-atas dan indigo
+     kanan-bawah (intensitas mengikuti tema cerah/gelap lewat warna glow). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <color android:color="@color/avi_bg"/>
@@ -11,8 +10,7 @@
             <gradient android:type="radial"
                 android:centerX="0.12" android:centerY="0.02"
                 android:gradientRadius="340dp"
-                android:startColor="#2E19B4E8"
-                android:centerColor="#1219B4E8"
+                android:startColor="@color/glow_cyan"
                 android:endColor="#0019B4E8"/>
         </shape>
     </item>
@@ -21,8 +19,7 @@
             <gradient android:type="radial"
                 android:centerX="0.92" android:centerY="0.98"
                 android:gradientRadius="380dp"
-                android:startColor="#262F6BFF"
-                android:centerColor="#0D2F6BFF"
+                android:startColor="@color/glow_indigo"
                 android:endColor="#002F6BFF"/>
         </shape>
     </item>

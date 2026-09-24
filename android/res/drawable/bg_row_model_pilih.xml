@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Kartu saran hero: panel kaca dengan garis tipis (tematik). -->
+<!-- Baris model TERPILIH: kartu kaca + garis aksen 1.5dp sebagai sorotan. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="18dp"/>
+    <corners android:radius="14dp"/>
     <solid android:color="@color/kaca_kartu"/>
-    <stroke android:width="1dp" android:color="@color/garis_terang"/>
+    <stroke android:width="1.5dp" android:color="@color/aksen"/>
 </shape>

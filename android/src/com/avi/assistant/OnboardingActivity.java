@@ -33,6 +33,8 @@ public class OnboardingActivity extends Activity {
     private ListView lvModel;
     private Button bLanjut;
     private String prov = "gemini";
+    private int posisiPilih = -1;          // baris model terpilih (sorotan)
+    private List<String> daftarTerakhir = new ArrayList<>();
 
     @Override
     protected void attachBaseContext(Context baru) {
@@ -103,11 +105,21 @@ public class OnboardingActivity extends Activity {
             bLanjut.setText("Selesai");
             ambilModel();
         } else if (anak == 1) {
-            String model = AviBrain.modelAktif(this);
-            if (model.isEmpty()) {
-                Toast.makeText(this, "Pilih dulu modelnya — atau sentuh \"Lewati\".",
+            // Selesai TIDAK BOLEH buntu: bila model belum dipilih, isi otomatis
+            // dengan rekomendasi (Gemini) / hasil urutan pertama daftar.
+            if (AviBrain.modelAktif(this).isEmpty()) {
+                String otomatis = "";
+                if ("gemini".equals(prov)) otomatis = AviBrain.MODEL_REKOMENDASI_GEMINI;
+                else if (!daftarTerakhir.isEmpty()) otomatis = daftarTerakhir.get(0);
+                if (otomatis.isEmpty()) {
+                    Toast.makeText(this, "Daftar model belum terbaca — coba "
+                            + "sentuh \"Ambil daftar model\" lagi, "
+                            + AviBrain.namaPemilik(this) + ".", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                AviBrain.pref(this).edit().putString("model." + prov, otomatis).apply();
+                Toast.makeText(this, "Model otomatis: " + otomatis,
                         Toast.LENGTH_SHORT).show();
-                return;
             }
             selesai();
         }
@@ -118,23 +130,52 @@ public class OnboardingActivity extends Activity {
         AviBrain.daftarModel(this, (daftar, galat) -> {
             if (isFinishing() || isDestroyed()) return;
             if (galat != null) {
-                tvStatusModel.setText(galat);
+                tvStatusModel.setText(galat + "\nTetap bisa menyelesaikan wizard — "
+                        + "model bisa dipilih nanti di Pengaturan.");
                 return;
             }
-            tvStatusModel.setText("Sentuh model yang ingin dipakai. Rekomendasi: "
-                    + (AviBrain.penyedia(this).equals("gemini")
-                    ? AviBrain.MODEL_REKOMENDASI_GEMINI : daftar.get(0)));
-            final List<String> tampil = new ArrayList<>(daftar);
+            daftarTerakhir = new ArrayList<>(daftar);
+            String rekomendasi = "gemini".equals(AviBrain.penyedia(this))
+                    ? AviBrain.MODEL_REKOMENDASI_GEMINI : daftar.get(0);
+            tvStatusModel.setText("Sentuh model untuk langsung memakainya. "
+                    + "Rekomendasi: " + rekomendasi);
             lvModel.setAdapter(new ArrayAdapter<String>(this,
-                    android.R.layout.simple_list_item_1, tampil) {
+                    android.R.layout.simple_list_item_1, daftarTerakhir) {
                 @Override
                 public View getView(int posisi, View ubah, ViewGroup induk) {
-                    View v = super.getView(posisi, ubah, induk);
-                    ((TextView) v).setTextSize(13f);
-                    return v;
+                    TextView tv = (TextView) ubah;
+                    if (tv == null) tv = new TextView(OnboardingActivity.this);
+                    boolean terpilih = posisi == posisiPilih;
+                    tv.setText(daftarTerakhir.get(posisi) + (terpilih ? "   ✓ dipakai" : ""));
+                    tv.setTextSize(14f);
+                    tv.setTypeface(android.graphics.Typeface.MONOSPACE,
+                            terpilih ? android.graphics.Typeface.BOLD
+                                    : android.graphics.Typeface.NORMAL);
+                    tv.setTextColor(getResources().getColor(terpilih
+                            ? R.color.aksen : R.color.avi_teks, getTheme()));
+                    tv.setBackgroundResource(terpilih
+                            ? R.drawable.bg_row_model_pilih : R.drawable.bg_row_model);
+                    int p = px(14);
+                    tv.setPadding(p, p, p, p);
+                    return tv;
                 }
             });
+            // BUGFIX: selama ini daftar tidak punya pendengar klik —
+            // sentuhan tidak pernah tersimpan sehingga wizard tak bisa selesai.
+            lvModel.setOnItemClickListener((induk, v, posisi, id) -> {
+                posisiPilih = posisi;
+                String pilih = daftarTerakhir.get(posisi);
+                AviBrain.pref(OnboardingActivity.this)
+                        .edit().putString("model." + prov, pilih).apply();
+                ((ArrayAdapter) lvModel.getAdapter()).notifyDataSetChanged();
+                Toast.makeText(this, "Model dipilih: " + pilih, Toast.LENGTH_SHORT).show();
+                selesai();   // langsung selesai — wizard tak lagi buntu
+            });
         });
+    }
+
+    private int px(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void selesai() {

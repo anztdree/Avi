@@ -368,11 +368,11 @@ public final class AviBrain {
     // ============================ warna aksen ============================
 
     /**
-     * Aksen kini bagian identitas Arc (sian elektrik) — tidak bisa dipilih.
-     * Dipakai untuk teks aksi (mis. "Salin") dan warna orb.
+ * Aksen mengikuti tema: cerah → biru pekat (kontras di atas putih),
+     * gelap → sian elektrik (identitas Arc). Dipakai orb & teks aksi.
      */
     public static int warnaAksen(Context c) {
-        return 0xFF38BDF8;
+        return temaGelap(c) ? 0xFF38BDF8 : 0xFF2563EB;
     }
 
     public static int campurWarna(int a, int b, float t) {
@@ -539,30 +539,23 @@ public final class AviBrain {
     // ============================ tema ============================
 
     /**
-     * Identitas visual AVI kini TUNGGAL: "Arc" — gelap sian permanen.
-     * Pemilik menilai sistem tema lama membingungkan dan membuat AVI
-     * terlihat tidak berubah; sejak versi ini tema tidak bisa dipilih lagi.
+     * CERAH = wajah utama AVI (pilihan pemilik: putih modern, gelap
+     * hanya selingan). Pref "tema": kosong/cerah → terang, "gelap" → malam.
      */
     public static boolean temaGelap(Context c) {
-        return true;
+        return "gelap".equals(pref(c).getString("tema", "cerah"));
     }
 
-    /** Sudah membuang selera tema/aksen versi lama di instalasi ini? */
-    private static boolean migrasiTemaSudah = false;
-
     /**
-     * MIGRASI PENTING: instalasi lama menyimpan pref tema=cerah/aksen=... —
-     * itulah kenapa APK baru terlihat "tidak berubah". Pref itu dibuang
-     * sekali per proses, lalu identitas Arc dipaksa menyala.
+     * Paksa context memakai mode ui sesuai tema terpilih, lalu catat tema
+     * yang terpasang — dipakai temaBerganti() agar layar terbuka ikut
+     * berganti saat pemilik mengubah tema di Pengaturan.
      */
     public static Context terapkanTema(Context dasar) {
-        if (!migrasiTemaSudah) {
-            migrasiTemaSudah = true;
-            try {
-                pref(dasar).edit().remove("tema").remove("aksen").apply();
-            } catch (Exception ignored) {}
-        }
         boolean gelap = temaGelap(dasar);
+        try {
+            pref(dasar).edit().putInt("ui_terpakai", gelap ? 1 : 0).apply();
+        } catch (Exception ignored) {}
         Configuration cfg = new Configuration(dasar.getResources().getConfiguration());
         int sekarang = cfg.uiMode & Configuration.UI_MODE_NIGHT_MASK;
         int diinginkan = gelap ? Configuration.UI_MODE_NIGHT_YES : Configuration.UI_MODE_NIGHT_NO;
@@ -571,6 +564,15 @@ public final class AviBrain {
             return dasar.createConfigurationContext(cfg);
         }
         return dasar;
+    }
+
+    /**
+     * True bila tema yang terpasang pada layar ini sudah tidak sama dengan
+     * tema terpilih (pemilik baru saja mengganti tema di Pengaturan).
+     */
+    public static boolean temaBerganti(Context c) {
+        int terpasang = pref(c).getInt("ui_terpakai", -1);
+        return terpasang != -1 && terpasang != (temaGelap(c) ? 1 : 0);
     }
 
     // ============================ pesan ramah & HTTP ============================

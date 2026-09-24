@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tombol pil kecil (Tutup dll): kaca + garis tipis (tematik). -->
+<!-- Baris daftar model (wizard/pengaturan): kartu kaca radius 14. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="20dp"/>
-    <solid android:color="@color/kaca_pil"/>
+    <corners android:radius="14dp"/>
+    <solid android:color="@color/kaca_kartu"/>
     <stroke android:width="1dp" android:color="@color/garis"/>
 </shape>
