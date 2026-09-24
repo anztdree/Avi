@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.avi.assistant"
+    android:versionCode="2"
+    android:versionName="1.1">
+
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34"/>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
+
+    <application
+        android:label="@string/app_name"
+        android:icon="@drawable/ic_launcher"
+        android:theme="@style/TemaAVI"
+        android:allowBackup="true"
+        android:supportsRtl="true">
+
+        <activity android:name=".MainActivity" android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".SettingsActivity" android:exported="false"/>
+        <activity android:name=".LiveActivity" android:exported="false"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustNothing"/>
+        <activity android:name=".OnboardingActivity" android:exported="false"/>
+
+        <!-- Asisten perangkat: AVI dipanggil lewat tahan tombol home /
+             sapu sudut bawah, seperti Google Assistant. Pemicu dipegang
+             sistem — tidak ada layanan latar, baterai tetap aman. -->
+        <service android:name=".AviVoiceInteractionService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_VOICE_INTERACTION">
+            <intent-filter>
+                <action android:name="android.service.voice.VoiceInteractionService"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <meta-data android:name="android.service.voice"
+                android:resource="@xml/avi_assisten"/>
+        </service>
+        <service android:name=".AviSessionService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_VOICE_INTERACTION"/>
+    </application>
+</manifest>

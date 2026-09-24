@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kartu obrolan transparan ala Google Assistant: AVI dipanggil lewat
+     tahan tombol home / sapu sudut bawah, kartu ini melayang di bawah
+     layar di atas aplikasi apa pun. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/card_session"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="AVI"
+            android:textColor="@color/avi_teks"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/btnTutupSesi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tutup"
+            android:textColor="@color/avi_teks_samping"
+            android:textSize="14sp"
+            android:padding="8dp"/>
+    </LinearLayout>
+
+    <com.avi.assistant.OrbView
+        android:id="@+id/orbSesi"
+        android:layout_width="132dp"
+        android:layout_height="132dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="4dp"/>
+
+    <TextView
+        android:id="@+id/tvStatusSesi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/avi_teks_samping"
+        android:textSize="13sp"/>
+
+    <TextView
+        android:id="@+id/tvAndaSesi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textColor="@color/avi_teks"
+        android:textSize="16sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/tvAviSesi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/avi_teks"
+        android:textSize="15sp"
+        android:maxLines="6"
+        android:ellipsize="end"/>
+</LinearLayout>

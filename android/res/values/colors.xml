@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema CERAH (default) -->
+    <color name="avi_bg">#F4F5F9</color>
+    <color name="avi_card">#FFFFFF</color>
+    <color name="avi_teks">#1B1C23</color>
+    <color name="avi_teks_samping">#5F6368</color>
+    <color name="gelembung_avi">#FFFFFF</color>
+    <color name="gelembung_user">#DCE7FB</color>
+    <color name="aksen">#3B6FE0</color>
+    <color name="garis">#E3E6EE</color>
+    <color name="status_bar">#F4F5F9</color>
+    <color name="dasar_kode">#EEF1F7</color>
+</resources>

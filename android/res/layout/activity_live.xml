@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/avi_bg"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/btnTutupLive"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Tutup" android:textColor="@color/avi_teks_samping"
+            android:textSize="15sp"
+            android:padding="10dp"/>
+
+        <Space
+            android:layout_width="0dp" android:layout_height="1dp"
+            android:layout_weight="1"/>
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Mode Live" android:textColor="@color/avi_teks"
+            android:textSize="17sp" android:textStyle="bold"
+            android:paddingRight="34dp"/>
+    </LinearLayout>
+
+    <com.avi.assistant.OrbView
+        android:id="@+id/orbLive"
+        android:layout_width="210dp" android:layout_height="210dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"/>
+
+    <TextView
+        android:id="@+id/tvStatusLive"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/avi_teks_samping" android:textSize="14sp"
+        android:layout_marginTop="10dp"
+        android:paddingLeft="24dp" android:paddingRight="24dp"/>
+
+    <ScrollView
+        android:id="@+id/scrollTranskrip"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="14dp"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="24dp" android:paddingRight="24dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/tvAndaLive"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks" android:textSize="17sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tvAviLive"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/avi_teks" android:textSize="16sp"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Hening sebentar — AVI pamit dan tidur. Panggil lagi kapan saja."
+        android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+        android:paddingBottom="14dp"
+        android:paddingLeft="24dp" android:paddingRight="24dp"/>
+</LinearLayout>

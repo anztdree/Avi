@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/avi_bg"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tvSalamOnboard"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:textColor="@color/avi_teks" android:textSize="24sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Tiga langkah singkat — AVI butuh kunci otaknya sendiri. Semua data hanya tersimpan di ponsel Anda."
+        android:textColor="@color/avi_teks_samping" android:textSize="13sp"/>
+
+    <ViewFlipper
+        android:id="@+id/flipper"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="18dp">
+
+        <!-- langkah 1: penyedia + API key -->
+        <ScrollView
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="1. Pilih penyedia AI"
+                    android:textColor="@color/avi_teks" android:textSize="17sp"
+                    android:textStyle="bold"/>
+
+                <RadioGroup
+                    android:id="@+id/rgProv"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp">
+
+                    <RadioButton android:id="@+id/rbProvGemini"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Google Gemini (punya kuota gratis)"
+                        android:textColor="@color/avi_teks" android:textSize="15sp"
+                        android:paddingTop="8dp" android:paddingBottom="8dp"/>
+                    <RadioButton android:id="@+id/rbProvNvidia"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="NVIDIA NIM (gratis)"
+                        android:textColor="@color/avi_teks" android:textSize="15sp"
+                        android:paddingTop="8dp" android:paddingBottom="8dp"/>
+                    <RadioButton android:id="@+id/rbProvOpenrouter"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="OpenRouter"
+                        android:textColor="@color/avi_teks" android:textSize="15sp"
+                        android:paddingTop="8dp" android:paddingBottom="8dp"/>
+                </RadioGroup>
+
+                <TextView
+                    android:id="@+id/tvPetunjukOnboard"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColor="@color/avi_teks_samping" android:textSize="13sp"/>
+
+                <EditText
+                    android:id="@+id/etKeyOnboard"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:hint="Tempel API key di sini"
+                    android:textColor="@color/avi_teks"
+                    android:textColorHint="@color/avi_teks_samping"
+                    android:textSize="14sp"
+                    android:inputType="text"
+                    android:maxLines="3"/>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- langkah 2: pilih model -->
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="2. Pilih model"
+                android:textColor="@color/avi_teks" android:textSize="17sp"
+                android:textStyle="bold"/>
+
+            <Button
+                android:id="@+id/bAmbilModel"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Ambil daftar model"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"/>
+
+            <TextView
+                android:id="@+id/tvStatusModel"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/avi_teks_samping" android:textSize="13sp"/>
+
+            <ListView
+                android:id="@+id/lvModel"
+                android:layout_width="match_parent" android:layout_height="match_parent"
+                android:layout_marginTop="8dp"
+                android:divider="@null"/>
+        </LinearLayout>
+    </ViewFlipper>
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="12dp">
+
+        <Button
+            android:id="@+id/bLewati"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Lewati"
+            android:textAllCaps="false"
+            android:background="?android:attr/selectableItemBackground"
+            android:textColor="@color/avi_teks_samping"/>
+
+        <Space
+            android:layout_width="0dp" android:layout_height="1dp"
+            android:layout_weight="1"/>
+
+        <Button
+            android:id="@+id/bLanjut"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:minWidth="130dp"
+            android:text="Lanjut"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_primary"
+            android:textColor="#FFFFFF"/>
+    </LinearLayout>
+</LinearLayout>

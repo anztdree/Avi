@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AVI</string>
+    <string name="kirim">Kirim</string>
+    <string name="pengaturan">Pengaturan</string>
+    <string name="sedang_berpikir">AVI sedang berpikir…</string>
+    <string name="hint_nama_pemilik">Nama panggilan Anda, mis. Pak Budi / Sir</string>
+    <string name="versi">AVI v1.1 — Mode Live free-flowing (hening = AVI tidur) + asisten perangkat: tahan tombol home untuk memanggil AVI di atas aplikasi mana pun. Asisten pribadi Android native, tanpa server perantara; otak AI memakai API key milik Anda.</string>
+</resources>

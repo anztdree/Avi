@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Meta-data VoiceInteractionService: daftarkan AVI sebagai kandidat
+     asisten digital perangkat (muncul di Pengaturan → Aplikasi default). -->
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="com.avi.assistant.AviSessionService"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="true"/>

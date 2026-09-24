@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/avi_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Pengaturan" android:textColor="@color/avi_teks"
+            android:textSize="22sp" android:textStyle="bold"
+            android:paddingBottom="12dp"/>
+
+        <!-- ===== Penyedia AI ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Penyedia AI"/>
+            <RadioGroup
+                android:id="@+id/rgPenyedia"
+                android:layout_width="match_parent" android:layout_height="wrap_content">
+                <RadioButton android:id="@+id/rbGemini" style="@style/PilihanSetting" android:text="Google Gemini"/>
+                <RadioButton android:id="@+id/rbNvidia" style="@style/PilihanSetting" android:text="NVIDIA NIM"/>
+                <RadioButton android:id="@+id/rbOpenrouter" style="@style/PilihanSetting" android:text="OpenRouter"/>
+            </RadioGroup>
+            <TextView
+                android:id="@+id/tvPetunjukKey"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingTop="6dp"/>
+            <EditText
+                android:id="@+id/etKey"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Tempel API key di sini"
+                android:textColor="@color/avi_teks"
+                android:textColorHint="@color/avi_teks_samping"
+                android:textSize="14sp"
+                android:inputType="text"
+                android:maxLines="3"
+                android:paddingTop="8dp"/>
+        </LinearLayout>
+
+        <!-- ===== Model ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Model"/>
+            <TextView
+                android:id="@+id/tvModel"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks" android:textSize="14sp"/>
+            <Button
+                android:id="@+id/bModel"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Ambil &amp; pilih model"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"/>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingTop="6dp"
+                android:text="Daftar model diambil langsung dari penyedia. Untuk Gemini, gemini-flash-lite-latest disematkan di atas karena responsnya cepat."/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/bTes"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Tes koneksi"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_primary"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- ===== Nama pemilik ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Nama pemilik"/>
+            <EditText
+                android:id="@+id/etNamaPemilik"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="@string/hint_nama_pemilik"
+                android:textColor="@color/avi_teks"
+                android:textColorHint="@color/avi_teks_samping"
+                android:textSize="14sp"
+                android:inputType="textPersonName|textCapWords"
+                android:maxLines="1"/>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingTop="6dp"
+                android:text="Bebas isi apa pun — cukup nama saja. Jika kosong, AVI memanggil Anda \u201CSir\u201D."/>
+        </LinearLayout>
+
+        <!-- ===== Tampilan ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Tampilan"/>
+            <RadioGroup
+                android:id="@+id/rgTema"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/rbCerah" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="Cerah"/>
+                <RadioButton android:id="@+id/rbGelap" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="Gelap"/>
+            </RadioGroup>
+            <TextView style="@style/JudulKartu" android:paddingTop="10dp" android:text="Warna aksen"/>
+            <RadioGroup
+                android:id="@+id/rgAksen"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/rbABiru" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="Biru"/>
+                <RadioButton android:id="@+id/rbAHijau" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="Hijau"/>
+                <RadioButton android:id="@+id/rbAUngu" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="Ungu"/>
+                <RadioButton android:id="@+id/rbAOranye" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="Oranye"/>
+            </RadioGroup>
+        </LinearLayout>
+
+        <!-- ===== Suara ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Suara"/>
+            <Switch
+                android:id="@+id/swTts"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Bacakan balasan AVI (TTS)"
+                android:textColor="@color/avi_teks" android:textSize="14sp"
+                android:paddingBottom="6dp"/>
+            <TextView
+                android:id="@+id/tvRate"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"/>
+            <SeekBar
+                android:id="@+id/sbRate"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="100"/>
+        </LinearLayout>
+
+        <!-- ===== Asisten perangkat ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Asisten perangkat"/>
+            <TextView
+                android:id="@+id/tvAsistenStatus"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks" android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+            <Button
+                android:id="@+id/bAsisten"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Jadikan AVI asisten perangkat"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"/>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingTop="6dp"
+                android:text="Setelah AVI terpilih, tahan tombol home di layar mana pun (navigasi gestur: sapu dari sudut kiri/kanan bawah) — kartu obrolan transparan AVI muncul di atas aplikasi, seperti Google Assistant. Pemicu dipegang sistem Android: tidak ada layanan latar, baterai tetap aman."/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/bBersihkan"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Bersihkan riwayat chat"
+            android:textAllCaps="false"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/versi"
+            android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+            android:paddingBottom="24dp"/>
+    </LinearLayout>
+</ScrollView>
