@@ -16,7 +16,7 @@
             android:paddingBottom="3dp"/>
         <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Perubahan langsung berlaku — sentuh Simpan untuk memastikan. (b11)"
+            android:text="Perubahan langsung berlaku — sentuh Simpan untuk memastikan. (b12)"
             android:textColor="@color/avi_teks_samping" android:textSize="13sp"
             android:paddingBottom="14dp"/>
 
@@ -154,15 +154,43 @@
             <Button
                 android:id="@+id/bKalibrasi"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Mulai kalibrasi suara"
+                android:text="Buka layar kalibrasi"
                 android:textAllCaps="false"
                 android:background="@drawable/btn_primary"
                 android:textColor="#FFFFFF"/>
             <TextView
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingTop="10dp" android:paddingBottom="2dp"
+                android:text="Gerbang sapaan di Mode Live:"/>
+            <RadioGroup
+                android:id="@+id/rgGerbang"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton
+                    android:id="@+id/rbGMati"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Nonaktif" android:textSize="13sp"
+                    android:textColor="@color/avi_teks"/>
+                <RadioButton
+                    android:id="@+id/rbGLembut"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Lembut" android:textSize="13sp"
+                    android:textColor="@color/avi_teks"/>
+                <RadioButton
+                    android:id="@+id/rbGKetat"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Ketat" android:textSize="13sp"
+                    android:textColor="@color/avi_teks"/>
+            </RadioGroup>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
                 android:paddingTop="6dp"
-                android:text="Uji suara &amp; perintah dengan suara Anda sendiri: ukur kenyaringan mikrofon, uji tiga perintah nyata AVI, uji bebas — lihat persis apa yang didengar ponsel. Profil kenyaringan + skor perintah tersimpan lokal sebagai kalibrasi pemilik."/>
+                android:text="Pendaftaran satu alur otomatis: ruangan → profil suara → kunci sapaan &quot;Hai AVI&quot;. Setelah berhasil layar terkunci — tersisa Reset ulang dan Hapus. Lembut: suara kurang cocok tetap dilayani; Ketat: 3× gagal, AVI menolak. Semua dihitung di ponsel — tanpa unggah."/>
         </LinearLayout>
 
         <!-- ===== Mode Live ===== -->

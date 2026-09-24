@@ -2,77 +2,67 @@ package com.avi.assistant;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.speech.RecognitionListener;
-import android.speech.RecognizerIntent;
-import android.speech.SpeechRecognizer;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 /**
- * KALIBRASI SUARA AVI — wizard agar asisten mengenali suara & perintah
- * pemiliknya sendiri (permintaan pemilik, 2026-09-24). Tiga langkah:
+ * KALIBRASI SUARA v2 — pendaftaran suara pemilik ala "Voice Match".
  *
- *  1. KENYARINGAN — AudioRecord murni (tanpa recognizer, mikrofon tidak
- *     boleh diperebutkan): ±4,5 detik; 0,8 detik pertama = lantai ruangan,
- *     sisanya = suara pemilik; level meter bergerak langsung. Hasilnya
- *     verdict praktis (jelas / agak pelan / terlalu pelan).
- *  2. UJI PERINTAH — tiga perintah nyata (sapaan, pertanyaan, aksi) lewat
- *     SpeechRecognizer Android; tampil PERSIS teks yang didengar ponsel
- *     + lulus/tidak per perintah → skor N/3. Tidak ada perintah yang
- *     dieksekusi di sini — hanya mengukur pengenalan.
- *  3. UJI BEBAS — ucapkan apa saja, lihat transkripnya.
+ * SATU layar, TIGA keadaan (permintaan pemilik, 2026-09-24):
+ *   A) Belum terdaftar — undangan, satu tombol "Mulai".
+ *   B) Pendaftaran     — alur OTOMATIS tanpa tombol:
+ *        1. kondisi ruangan (1,2 dtk, pemilik diam),
+ *        2. membaca satu frasa kaya fonem → ProfilSuara dibangun
+ *           (MFCC + nada dasar, murni DSP Java — lihat Dsp.java),
+ *        3. sapaan "Hai AVI" 3× → KunciSapa (template DTW).
+ *      Take gagal (terlalu pelan/terpotong) = AVI minta ulang take itu
+ *      saja, alur tidak kembali ke awal. Selesai = tersimpan otomatis.
+ *   C) TERKUNCI        — suara terdaftar; pilihan hanya dua:
+ *      "Reset ulang" (jalankan alur dari awal, timpa profil lama) dan
+ *      "Hapus kalibrasi" (bersihkan profil+kunci+pref → kembali ke A).
  *
- * Hasil kalibrasi (lantai dB, kenyaringan bicara dB, skor, waktu) disimpan
- * lokal di SharedPreferences ponsel — tanpa unggah, tanpa server. Teks
- * yang dipakai pembanding sengaja longgar: pengenal Android sering
- * menulis nama & istilah dengan ejaan berbeda (mis. "AVI" → "abi"/"af").
+ * Satu sesi AudioRecord 16 kHz menemani seluruh alur (mikrofon dibuka
+ * sekali, dilepastikan lepas di finally). SpeechRecognizer TIDAK dipakai
+ * di sini — pengujian kecerdasan pengenal bukan bagian pendaftaran suara.
  */
 public class KalibrasiActivity extends Activity {
 
-    /** Perintah uji: [frasa yang diucapkan, keterangan pendek]. */
-    private static final String[][] UJI = {
-            {"Hai AVI", "sapaan panggilan asisten"},
-            {"Jam berapa sekarang", "pertanyaan harian"},
-            {"Nyalakan senter", "perintah aksi perangkat"}
-    };
-    private static final long DURASI_UKUR_MS = 4500;
-    private static final long LANTAI_MS = 800;
+    /** Frasa baca: sengaja kaya fonem p/b/t/d/k/g/c/j/sy + vokal penuh. */
+    private static final String FRASA_BACA =
+            "Selamat pagi, saya pemilik AVI. Suara ini kunci rumah saya. "
+            + "Langit cerah, awan pelan berarak di cakrawala. AVI, nyalakan "
+            + "senter, buka musik, dan ingat jadwal saya hari ini.";
 
+    private static final int BLOK = 512;
+    private static final long RUANG_MS = 1200;
+
+    private TextView tvJudul, tvNarasi, tvLangkah, tvInstruksi, tvFrasa, tvUmpan, tvDots;
     private ProgressBar pbLevel;
-    private TextView tvHasil1, tvTarget, tvFrasa, tvHasil2, tvHasil3, tvRingkasan;
-    private Button bLangkah1, bLangkah2, bUlangi, bLangkah3, bSimpanKal;
+    private Button bUtama, bKedua;
 
-    private SpeechRecognizer pengenal;
-    private boolean sedangDengar = false;
-    private boolean modeUjiAktif = false;   // true = uji perintah, false = uji bebas
-
-    // ===== langkah 1 =====
-    private boolean sedangUkur = false;
-    private volatile boolean batalkanUkur = false;
-    private boolean langkah1Selesai = false;
-    private float lantaiDb = -60f, bicaraDb = -60f;
-
-    // ===== langkah 2 =====
-    private int idxUji = 0;
-    private final boolean[] lulusUji = new boolean[UJI.length];
-    private boolean ujiSelesai = false;
-
+    private final Handler ui = new Handler(Looper.getMainLooper());
+    private volatile boolean alurJalan = false;
+    private Thread alurThread;
     private Runnable tertunda;   // aksi setelah izin mikrofon diberikan
 
     @Override
@@ -85,57 +75,103 @@ public class KalibrasiActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_kalibrasi);
 
-        pbLevel    = findViewById(R.id.pbLevel);
-        tvHasil1   = findViewById(R.id.tvHasil1);
-        tvTarget   = findViewById(R.id.tvTarget);
+        tvJudul    = findViewById(R.id.tvJudul);
+        tvNarasi   = findViewById(R.id.tvNarasi);
+        tvLangkah  = findViewById(R.id.tvLangkah);
+        tvInstruksi= findViewById(R.id.tvInstruksi);
         tvFrasa    = findViewById(R.id.tvFrasa);
-        tvHasil2   = findViewById(R.id.tvHasil2);
-        tvHasil3   = findViewById(R.id.tvHasil3);
-        tvRingkasan= findViewById(R.id.tvRingkasan);
-        bLangkah1  = findViewById(R.id.bLangkah1);
-        bLangkah2  = findViewById(R.id.bLangkah2);
-        bUlangi    = findViewById(R.id.bUlangi);
-        bLangkah3  = findViewById(R.id.bLangkah3);
-        bSimpanKal = findViewById(R.id.bSimpanKal);
+        tvUmpan    = findViewById(R.id.tvUmpan);
+        tvDots     = findViewById(R.id.tvDots);
+        pbLevel    = findViewById(R.id.pbLevel);
+        bUtama     = findViewById(R.id.bUtama);
+        bKedua     = findViewById(R.id.bKedua);
 
-        bLangkah1.setOnClickListener(v -> {
-            if (sedangUkur) return;
-            denganIzin(this::mulaiUkur);
-        });
-        bLangkah2.setOnClickListener(v -> {
-            if (sedangUkur || sedangDengar) return;
-            denganIzin(() -> mulaiDengar(true));
-        });
-        bUlangi.setOnClickListener(v -> {
-            if (sedangUkur || sedangDengar) return;
-            idxUji = 0;
-            ujiSelesai = false;
-            for (int i = 0; i < lulusUji.length; i++) lulusUji[i] = false;
-            refreshUji();
-            perbaruiRingkasan();
-        });
-        bLangkah3.setOnClickListener(v -> {
-            if (sedangUkur || sedangDengar) return;
-            denganIzin(() -> mulaiDengar(false));
-        });
-        bSimpanKal.setOnClickListener(v -> simpan());
+        // A dan C sama-sama membuka alur pendaftaran (C = reset ulang)
+        bUtama.setOnClickListener(v -> denganIzin(this::mulaiAlur));
+        bKedua.setOnClickListener(v -> hapusKalibrasi());
 
-        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            tvHasil2.setText("Pengenalan suara tidak tersedia di ponsel ini — "
-                    + "Langkah 2 & 3 tidak bisa dijalankan.");
-            bLangkah2.setEnabled(false);
-            bUlangi.setEnabled(false);
-            bLangkah3.setEnabled(false);
-        }
-
-        pengenal = SpeechRecognizer.createSpeechRecognizer(this);
-        pengenal.setRecognitionListener(new recognitionListener());
-
-        refreshUji();
-        perbaruiRingkasan();
+        tampilkanMenurutKeadaan();
     }
 
-    // ============================ izin ============================
+    // ========================= keadaan A dan C =========================
+
+    private boolean terdaftar() { return ProfilSuara.ada(this); }
+
+    private void tampilkanMenurutKeadaan() {
+        if (terdaftar()) tampilkanKunci(); else tampilkanUndangan();
+    }
+
+    /** Keadaan A — undangan. */
+    private void tampilkanUndangan() {
+        String nama = AviBrain.namaPemilik(this);
+        tvJudul.setText("Kenalkan AVI dengan suara Anda");
+        tvNarasi.setText("Setelah terdaftar, AVI memakai suara Anda sebagai "
+                + "kunci pribadinya: gerbang Mode Live mengenali sapaan Anda "
+                + "sebelum AVI mendengarkan perintah. Kurang dari satu menit.");
+        tvLangkah.setText("Siap mendaftar");
+        tvInstruksi.setText("Alurnya otomatis tiga langkah — mendengar ruangan "
+                + "(diam dulu), membaca satu kalimat, lalu mengunci sapaan "
+                + "\u201CHai AVI\u201D tiga kali. Setelah menekan Mulai, Anda "
+                + "tidak perlu menyentuh apa pun lagi" + (nama.isEmpty() ? "." : ", " + nama + "."));
+        tvFrasa.setVisibility(View.GONE);
+        tvDots.setVisibility(View.GONE);
+        tvUmpan.setVisibility(View.GONE);
+        pbLevel.setProgress(0);
+        bUtama.setVisibility(View.VISIBLE);
+        bUtama.setText("Mulai pendaftaran");
+        bKedua.setVisibility(View.GONE);
+    }
+
+    /** Keadaan C — terkunci: hanya Reset ulang / Hapus. */
+    private void tampilkanKunci() {
+        long w = AviBrain.pref(this).getLong("kal_waktu", 0);
+        String waktu = w > 0
+                ? new SimpleDateFormat("d MMM yyyy • HH.mm", Locale.getDefault())
+                        .format(new Date(w))
+                : "—";
+        float pitch = AviBrain.pref(this).getFloat("kal_pitch", 0f);
+        String mode = GerbangSapa.mode(this);
+        String label = "ketat".equals(mode) ? "Ketat"
+                : "mati".equals(mode) ? "Nonaktif" : "Lembut";
+
+        tvJudul.setText("Suara Anda terdaftar");
+        tvNarasi.setText("Layar ini terkunci. Yang bisa dilakukan hanya "
+                + "mereset atau menghapus — persis seperti kunci asli.");
+        tvLangkah.setText("Terdaftar ✓  •  terkunci");
+        tvInstruksi.setText("Didaftarkan " + waktu
+                + (pitch > 0 ? " • nada dasar suara Anda ±" + Math.round(pitch) + " Hz" : "")
+                + " • gerbang Mode Live: " + label + ".");
+        tvFrasa.setVisibility(View.GONE);
+        tvDots.setVisibility(View.GONE);
+        tvUmpan.setVisibility(View.GONE);
+        pbLevel.setProgress(100);
+        bUtama.setVisibility(View.VISIBLE);
+        bUtama.setText("Reset ulang");
+        bKedua.setVisibility(View.VISIBLE);
+        bKedua.setText("Hapus kalibrasi");
+    }
+
+    private void hapusKalibrasi() {
+        new AlertDialog.Builder(this)
+                .setTitle("Hapus kalibrasi?")
+                .setMessage("Profil suara & kunci sapaan dihapus. AVI kembali "
+                        + "melayani siapa pun sampai Anda mendaftar ulang.")
+                .setPositiveButton("Hapus", (d, w) -> {
+                    ProfilSuara.berkas(this).delete();
+                    KunciSapa.berkas(this).delete();
+                    AviBrain.pref(this).edit()
+                            .remove("kal_lantai_db").remove("kal_bicara_db")
+                            .remove("kal_skor").remove("kal_waktu")
+                            .remove("kal_pitch")
+                            .apply();
+                    Toast.makeText(this, "Kalibrasi dihapus.", Toast.LENGTH_SHORT).show();
+                    tampilkanUndangan();
+                })
+                .setNegativeButton("Batal", null)
+                .show();
+    }
+
+    // ============================== izin ==============================
 
     private boolean izinAda() {
         return checkSelfPermission(Manifest.permission.RECORD_AUDIO)
@@ -155,358 +191,260 @@ public class KalibrasiActivity extends Activity {
         if (hasil.length > 0 && hasil[0] == PackageManager.PERMISSION_GRANTED) {
             if (tertunda != null) { Runnable a = tertunda; tertunda = null; a.run(); }
         } else {
-            Toast.makeText(this, "Izin mikrofon ditolak — kalibrasi butuh "
-                    + "mikrofon untuk mengenali suara Anda.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Izin mikrofon ditolak — pendaftaran suara "
+                    + "butuh mikrofon.", Toast.LENGTH_LONG).show();
         }
     }
 
-    // ================== LANGKAH 1: kenyaringan ==================
+    // ==================== alur pendaftaran (B) ====================
 
-    private void mulaiUkur() {
-        if (sedangUkur) return;
-        sedangUkur = true;
-        batalkanUkur = false;
-        bLangkah1.setEnabled(false);
-        bLangkah2.setEnabled(false);
-        bUlangi.setEnabled(false);
-        bLangkah3.setEnabled(false);
-        bLangkah1.setText("Mengukur…");
-        tvHasil1.setText("Mendengarkan — baca kalimatnya sekarang…");
-        pbLevel.setProgress(0);
+    private void mulaiAlur() {
+        if (alurJalan) return;
+        alurJalan = true;
+        bUtama.setVisibility(View.GONE);   // terkunci selama alur berjalan
+        bKedua.setVisibility(View.GONE);
+        alurThread = new Thread(this::jalankanAlur, "avi-kalibrasi");
+        alurThread.start();
+    }
 
-        final int laju = 44100;
-        new Thread(() -> {
-            int minBuf = AudioRecord.getMinBufferSize(laju,
+    private void jalankanAlur() {
+        AudioRecord ar = null;
+        try {
+            int minBuf = AudioRecord.getMinBufferSize(Dsp.SR,
                     AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-            AudioRecord ar = null;
-            try {
-                ar = new AudioRecord(MediaRecorder.AudioSource.MIC, laju,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT, Math.max(minBuf, 8192));
-                if (ar.getState() != AudioRecord.STATE_INITIALIZED) {
-                    selesaiUkurGagal("Mikrofon tidak bisa dibuka — tutup aplikasi "
-                            + "lain yang memakai mikrofon lalu coba lagi.");
-                    return;
-                }
-                ar.startRecording();
-                short[] blok = new short[2048];
-                long t0 = System.currentTimeMillis();
-                double jumlahLantai = 0;
-                int nLantai = 0;
-                List<Double> suara = new ArrayList<>();
-
-                while (true) {
-                    long t = System.currentTimeMillis() - t0;
-                    if (batalkanUkur || t >= DURASI_UKUR_MS) break;
-                    int n = ar.read(blok, 0, blok.length);
-                    if (n <= 0) continue;
-                    double jumlah = 0;
-                    for (int i = 0; i < n; i++) {
-                        double v = blok[i] / 32768.0;
-                        jumlah += v * v;
-                    }
-                    double db = 20.0 * Math.log10(Math.sqrt(jumlah / n) + 1e-9);
-                    if (t < LANTAI_MS) { jumlahLantai += db; nLantai++; }
-                    else suara.add(db);
-                    final int prog = (int) Math.min(100, t * 100 / DURASI_UKUR_MS);
-                    final int level = levelDari(db);
-                    runOnUiThread(() -> {
-                        if (sedangUkur) {
-                            pbLevel.setProgress(prog);
-                            pbLevel.setSecondaryProgress(level);
-                        }
-                    });
-                }
-                try { ar.stop(); } catch (Exception ignored) {}
-
-                if (batalkanUkur) {
-                    runOnUiThread(this::resetTombolUkur);
-                    return;
-                }
-                lantaiDb = nLantai > 0 ? (float) (jumlahLantai / nLantai) : -60f;
-                bicaraDb = hitungBicara(suara);
-                runOnUiThread(this::tampilkanHasilUkur);
-            } catch (Exception e) {
-                selesaiUkurGagal("Pengukuran gagal: " + e.getMessage());
-            } finally {
-                if (ar != null) { try { ar.release(); } catch (Exception ignored) {} }
+            ar = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                    Dsp.SR, AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT, Math.max(minBuf, 8192));
+            if (ar.getState() != AudioRecord.STATE_INITIALIZED) {
+                gagalAlur("Mikrofon tidak bisa dibuka — tutup aplikasi lain "
+                        + "yang memakai mikrofon, lalu coba lagi.");
+                return;
             }
-        }, "kalibrasi-ukur").start();
-    }
+            ar.startRecording();
+            short[] blok = new short[BLOK];
 
-    /** Kenyaringan suara = persentil-85 dari dBFS per blok (anti outlier). */
-    private float hitungBicara(List<Double> suara) {
-        if (suara.isEmpty()) return -60f;
-        Collections.sort(suara);
-        int i = (int) Math.floor(suara.size() * 0.85);
-        if (i >= suara.size()) i = suara.size() - 1;
-        return (float) (double) suara.get(i);
-    }
+            // ---- LANGKAH 1: kondisi ruangan (pemilik diam) ----
+            ui.post(() -> {
+                tvLangkah.setText("Langkah 1 dari 3 — kondisi ruangan");
+                tvInstruksi.setText("Diam dulu ya — AVI sedang mendengar "
+                        + "ruangan selama sedetik lebih…");
+                tvFrasa.setVisibility(View.GONE);
+                tvDots.setVisibility(View.GONE);
+                tvUmpan.setVisibility(View.GONE);
+                pbLevel.setProgress(0);
+            });
+            double jumlah = 0;
+            int nLantai = 0;
+            long t0 = System.currentTimeMillis();
+            while (alurJalan && System.currentTimeMillis() - t0 < RUANG_MS) {
+                int n = ar.read(blok, 0, blok.length);
+                if (n <= 0) continue;
+                jumlah += Dsp.db(blok, 0, n);
+                nLantai++;
+                pasangMeter(Dsp.db(blok, 0, n));
+            }
+            if (!alurJalan) return;
+            final float lantai = nLantai > 0 ? (float) (jumlah / nLantai) : -55f;
 
-    private int levelDari(double db) {
-        double level = (db + 60.0) / 45.0 * 100.0;   // -60..-15 dBFS → 0..100
-        return (int) Math.max(0, Math.min(100, level));
-    }
+            // ---- LANGKAH 2: baca frasa → profil ----
+            ProfilSuara profil = null;
+            for (int percobaan = 1; percobaan <= 4 && alurJalan; percobaan++) {
+                final int ke = percobaan;
+                ui.post(() -> {
+                    tvLangkah.setText("Langkah 2 dari 3 — profil suara"
+                            + (ke > 1 ? " (ulangan " + ke + ")" : ""));
+                    tvInstruksi.setText("Baca kalimat ini dengan suara jelas dan "
+                            + "normal — AVI menunggu sampai Anda selesai:");
+                    tvFrasa.setVisibility(View.VISIBLE);
+                    tvFrasa.setText(FRASA_BACA);
+                    tvDots.setVisibility(View.GONE);
+                    pbLevel.setProgress(0);
+                });
+                short[] ucap = rekamUcapan(ar, blok, lantai + 8.0, 14000, 1100);
+                if (!alurJalan) return;
+                profil = ProfilSuara.bangun(ucap, 0, ucap.length, lantai);
+                if (profil != null && profil.frameSuara >= 15) break;
+                profil = null;
+                ui.post(() -> tvInstruksi.setText("Sepertinya terlalu pelan "
+                        + "atau terpotong — sekali lagi ya, "
+                        + AviBrain.namaPemilik(this) + "."));
+            }
+            if (!alurJalan) return;
+            if (profil == null) {
+                gagalAlur("Suara masih belum tertangkap baik. Cari tempat lebih "
+                        + "sunyi, bicara lebih dekat ke ponsel, lalu pendaftaran "
+                        + "bisa diulang.");
+                return;
+            }
 
-    private void tampilkanHasilUkur() {
-        sedangUkur = false;
-        resetTombolUkur();
-        pbLevel.setProgress(100);
-        String verdict;
-        if (bicaraDb - lantaiDb < 6f) {
-            verdict = "Suara Anda hampir tidak terdengar — bicara lebih keras "
-                    + "atau dekatkan ponsel, lalu ulangi.";
-        } else if (bicaraDb > -22f) {
-            verdict = "Sangat jelas. Kondisi ideal — AVI akan mudah mendengar Anda.";
-        } else if (bicaraDb > -28f) {
-            verdict = "Bagus. Kenyaringan ini nyaman untuk AVI.";
-        } else if (bicaraDb > -34f) {
-            verdict = "Agak pelan — masih bisa, tapi dekatkan ponsel saat bicara.";
-        } else {
-            verdict = "Terlalu pelan — saran kerasnya suara atau dekatkan ponsel.";
+            // ---- LANGKAH 3: kunci sapaan 3 take ----
+            ArrayList<short[]> take = new ArrayList<>();
+            int usaha = 0;
+            while (take.size() < 3 && alurJalan && usaha < 8) {
+                usaha++;
+                final int terisi = take.size();
+                ui.post(() -> {
+                    tvLangkah.setText("Langkah 3 dari 3 — kunci sapaan");
+                    tvInstruksi.setText("Sekarang sapa AVI — ucapkan dengan nada "
+                            + "yang sama tiap kali:");
+                    tvFrasa.setVisibility(View.VISIBLE);
+                    tvFrasa.setText("\u201CHai AVI\u201D");
+                    tvDots.setVisibility(View.VISIBLE);
+                    tvDots.setText(titikSapa(terisi));
+                    pbLevel.setProgress(0);
+                });
+                short[] ucap = rekamUcapan(ar, blok, lantai + 8.0, 3500, 750);
+                if (!alurJalan) return;
+                if (ucap.length < 1200 || Dsp.mfcc(ucap, 0, ucap.length).length < 6) {
+                    ui.post(() -> tvInstruksi.setText("Tidak terdengar — ucapkan "
+                            + "sekali lagi ya."));
+                    continue;
+                }
+                take.add(ucap);
+            }
+            if (!alurJalan) return;
+            if (take.size() < 3) {
+                gagalAlur("Sapaan belum lengkap. Pendaftaran bisa diulang "
+                        + "kapan saja dari layar ini.");
+                return;
+            }
+
+            KunciSapa kunci = KunciSapa.bangun(take);
+            if (kunci == null || !kunci.simpan(this)) {
+                gagalAlur("Gagal menyimpan kunci sapaan.");
+                return;
+            }
+            if (!profil.simpan(this)) {
+                gagalAlur("Gagal menyimpan profil suara.");
+                return;
+            }
+            AviBrain.pref(this).edit()
+                    .putFloat("kal_lantai_db", lantai)
+                    .putFloat("kal_bicara_db", profil.bicaraDb)
+                    .putFloat("kal_pitch", profil.pitchMedian)
+                    .putLong("kal_waktu", System.currentTimeMillis())
+                    .apply();
+
+            // ---- SELESAI: tersimpan otomatis, tanpa tombol ----
+            ui.post(() -> {
+                tvLangkah.setText("Selesai ✓");
+                tvInstruksi.setText("Suara Anda sudah terdaftar. Rawat seperti "
+                        + "PIN: jangan biarkan orang lain mendaftarkan suaranya "
+                        + "di ponsel Anda.");
+                tvFrasa.setVisibility(View.GONE);
+                tvDots.setVisibility(View.GONE);
+                tvUmpan.setVisibility(View.GONE);
+                pbLevel.setProgress(100);
+            });
+            ui.postDelayed(() -> {
+                if (!isFinishing() && !isDestroyed()) tampilkanKunci();
+            }, 1800);
+        } catch (Throwable e) {
+            gagalAlur("Pendaftaran terganggu: " + e.getClass().getSimpleName());
+        } finally {
+            if (ar != null) {
+                try { ar.stop(); } catch (Exception ignored) {}
+                try { ar.release(); } catch (Exception ignored) {}
+            }
         }
-        tvHasil1.setText(String.format(Locale.US,
-                "Kenyaringan suara: %.0f dB (lantai ruangan %.0f dB). %s",
-                bicaraDb, lantaiDb, verdict));
-        langkah1Selesai = true;
-        perbaruiRingkasan();
     }
 
-    private void selesaiUkurGagal(String pesan) {
-        sedangUkur = false;
-        runOnUiThread(() -> {
-            resetTombolUkur();
-            tvHasil1.setText(pesan);
+    private String titikSapa(int terisi) {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            if (i > 0) s.append("  ");
+            s.append(i < terisi ? "●" : "○");
+        }
+        return s.toString();
+    }
+
+    private void gagalAlur(final String pesan) {
+        ui.post(() -> {
+            if (isFinishing() || isDestroyed()) return;
+            tampilkanMenurutKeadaan();
+            tvInstruksi.setText(pesan);
         });
     }
 
-    private void resetTombolUkur() {
-        bLangkah1.setEnabled(true);
-        bLangkah1.setText("Ukur ulang suara");
-        boolean pengenalOk = SpeechRecognizer.isRecognitionAvailable(this);
-        bLangkah2.setEnabled(pengenalOk);
-        bUlangi.setEnabled(pengenalOk);
-        bLangkah3.setEnabled(pengenalOk);
-    }
+    // ======================= rekam satu ucapan =======================
 
-    // ================== LANGKAH 2 & 3: recognizer ==================
-
-    private void mulaiDengar(boolean modeUji) {
-        if (sedangDengar) return;
-        sedangDengar = true;
-        modeUjiAktif = modeUji;
-        bLangkah2.setEnabled(false);
-        bUlangi.setEnabled(false);
-        bLangkah3.setEnabled(false);
-        bSimpanKal.setEnabled(false);
-
-        Intent it = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        it.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        it.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID");
-        it.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-        it.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
-
-        if (modeUji) {
-            tvHasil2.setText("Mendengarkan… ucapkan: \u201C" + UJI[idxUji][0] + "\u201D");
-        } else {
-            tvHasil3.setText("Mendengarkan… ucapkan apa saja.");
+    /**
+     * Tunggu onset (maks 8 dtk) → rekam sampai hening 'heningMs' atau
+     * batas 'maksMs'. Meter & nada dasar hidup di tvUmpan/pbLevel.
+     */
+    private short[] rekamUcapan(AudioRecord ar, short[] blok, double ambang,
+                                long maksMs, long heningMs) throws Exception {
+        long t0 = System.currentTimeMillis();
+        int keras = 0;
+        while (alurJalan && System.currentTimeMillis() - t0 < 8000) {
+            int n = ar.read(blok, 0, blok.length);
+            if (n <= 0) continue;
+            double db = Dsp.db(blok, 0, n);
+            pasangMeter(db);
+            if (db > ambang) { if (++keras >= 3) break; } else keras = 0;
         }
-        try {
-            pengenal.startListening(it);
-        } catch (Exception e) {
-            sedangDengar = false;
-            aktifkanTombolDengar();
-            String pesan = "Pengenal tidak bisa dijalankan — coba lagi sebentar.";
-            if (modeUji) tvHasil2.setText(pesan); else tvHasil3.setText(pesan);
-        }
-    }
+        if (!alurJalan || keras < 3) return new short[0];
 
-    private void aktifkanTombolDengar() {
-        bLangkah2.setEnabled(true);
-        bUlangi.setEnabled(true);
-        bLangkah3.setEnabled(true);
-        perbaruiRingkasan();   // ikut mengaktifkan/menonaktifkan Simpan
-    }
-
-    private class recognitionListener implements RecognitionListener {
-        @Override public void onReadyForSpeech(Bundle p) {}
-        @Override public void onBeginningOfSpeech() {}
-        @Override public void onRmsChanged(float rmsdB) {}
-        @Override public void onBufferReceived(byte[] buffer) {}
-        @Override public void onEndOfSpeech() {}
-        @Override public void onEvent(int eventType, Bundle params) {}
-
-        @Override public void onPartialResults(Bundle parsial) {
-            ArrayList<String> daftar = parsial
-                    .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            if (daftar == null || daftar.isEmpty()) return;
-            String teks = daftar.get(0);
-            if (teks == null || teks.trim().isEmpty()) return;
-            // transkrip langsung: pemilik melihat pengenal "mengikuti" ucapannya
-            if (modeUjiAktif) {
-                tvHasil2.setText("Terbaca: \u201C" + teks + "\u201D");
-            } else {
-                tvHasil3.setText("Terbaca: \u201C" + teks + "\u201D");
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(BLOK * 2 * 128);
+        long mulai = System.currentTimeMillis();
+        long suaraTerakhir = System.currentTimeMillis();
+        int hitung = 0;
+        while (alurJalan && System.currentTimeMillis() - mulai < maksMs) {
+            int n = ar.read(blok, 0, blok.length);
+            if (n <= 0) continue;
+            for (int i = 0; i < n; i++) {
+                int s = blok[i];
+                buf.write(s & 0xFF);
+                buf.write((s >> 8) & 0xFF);
             }
+            long kini = System.currentTimeMillis();
+            double db = Dsp.db(blok, 0, n);
+            if (db > ambang - 2.0) suaraTerakhir = kini;
+            if ((hitung++ & 15) == 0) {
+                pasangMeter(db);
+                tampilkanNada(blok);
+            }
+            if (kini - mulai > 900 && kini - suaraTerakhir > heningMs) break;
         }
+        byte[] b = buf.toByteArray();
+        short[] pcm = new short[b.length / 2];
+        ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(pcm);
+        return pcm;
+    }
 
-        @Override public void onResults(Bundle hasil) {
-            sedangDengar = false;
-            aktifkanTombolDengar();
-            ArrayList<String> daftar = hasil
-                    .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            String teks = (daftar == null || daftar.isEmpty())
-                    ? "" : daftar.get(0).trim();
+    private void pasangMeter(final double db) {
+        final int level = (int) Math.max(0, Math.min(100, (db + 60.0) / 50.0 * 100.0));
+        ui.post(() -> pbLevel.setProgress(level));
+    }
 
-            if (teks.isEmpty()) {
-                tvHasil2.setText("Tidak terdengar apa pun — coba lagi lebih dekat "
-                        + "atau lebih keras, " + AviBrain.namaPemilik(KalibrasiActivity.this) + ".");
+    /** Nada dasar sesaat (tiap ±0,5 dtk) — umpan balik "AVI benar-benar dengar". */
+    private void tampilkanNada(short[] blok) {
+        double[][] p = Dsp.pitch(blok, 0, blok.length);
+        for (double[] frame : p) {
+            if (frame[0] > 0) {
+                final int hz = (int) Math.round(frame[0]);
+                ui.post(() -> {
+                    if (!alurJalan) return;
+                    tvUmpan.setVisibility(View.VISIBLE);
+                    tvUmpan.setText("nada ±" + hz + " Hz");
+                });
                 return;
             }
-
-            if (!modeUjiAktif) {
-                tvHasil3.setText("Terbaca: \u201C" + teks + "\u201D");
-                return;
-            }
-
-            boolean lulus = lulusUjian(idxUji, teks);
-            lulusUji[idxUji] = lulus;
-            String verdict = lulus
-                    ? "✓ Lulus — ponsel mengenali perintah Anda."
-                    : "✗ Tidak lulus — yang terbaca: \u201C" + teks
-                      + "\u201D. Coba lebih jelas (sentuh Ulangi semua untuk mengulang).";
-            tvHasil2.setText("Yang didengar ponsel: \u201C" + teks + "\u201D\n" + verdict);
-
-            if (idxUji < UJI.length - 1) {
-                idxUji++;
-                refreshUji();
-            } else {
-                ujiSelesai = true;
-                refreshUji();
-            }
-            perbaruiRingkasan();
-        }
-
-        @Override public void onError(int error) {
-            sedangDengar = false;
-            aktifkanTombolDengar();
-            String pesan;
-            switch (error) {
-                case SpeechRecognizer.ERROR_NO_MATCH:
-                case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
-                    pesan = "Tidak terdengar — coba lagi lebih dekat atau lebih keras.";
-                    break;
-                case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
-                    pesan = "Izin mikrofon belum ada — sentuh tombol lagi untuk meminta.";
-                    break;
-                case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
-                    pesan = "Pengenal sibuk — tunggu sebentar lalu coba lagi.";
-                    break;
-                default:
-                    pesan = "Pengenalan terganggu (kode " + error + ") — coba lagi.";
-            }
-            if (!modeUjiAktif) {
-                tvHasil3.setText(pesan);
-            } else {
-                tvHasil2.setText(pesan);
-            }
         }
     }
 
-    /** Pembanding longgar — pengenal Android sering menulis dengan ejaan lain. */
-    private boolean lulusUjian(int i, String dengar) {
-        String d = dengar.toLowerCase(Locale.ROOT).replaceAll("[^a-z ]", " ");
-        switch (i) {
-            case 0:   // "Hai AVI" — bisa tertulis avi/abi/af/abdi/api…
-                for (String w : d.split("\\s+")) {
-                    if (w.startsWith("av") || w.startsWith("ab")
-                            || w.startsWith("af") || w.equals("ai")) return true;
-                }
-                return false;
-            case 1:   // "Jam berapa sekarang"
-                return d.contains("jam");
-            default:  // "Nyalakan senter"
-                return d.contains("sent") || d.contains("lenter");
-        }
-    }
-
-    private void refreshUji() {
-        if (ujiSelesai) {
-            int skor = jumlahLulus();
-            tvTarget.setText("Selesai — skor perintah Anda: " + skor + " dari "
-                    + UJI.length + (skor == UJI.length
-                        ? ". Sempurna, " + AviBrain.namaPemilik(this) + "."
-                        : ". Skor penuh bagus, tapi N/3 pun tetap tersimpan."));
-            tvFrasa.setText("Perintah mana pun bisa diulang — sentuh \u201CUlangi semua\u201D.");
-        } else {
-            tvTarget.setText("Perintah " + (idxUji + 1) + " dari " + UJI.length
-                    + " (" + UJI[idxUji][1] + ") — ucapkan dengan jelas:");
-            tvFrasa.setText("\u201C" + UJI[idxUji][0] + "\u201D");
-        }
-    }
-
-    private int jumlahLulus() {
-        int n = 0;
-        for (boolean b : lulusUji) if (b) n++;
-        return n;
-    }
-
-    // ====================== ringkasan & simpan ======================
-
-    private void perbaruiRingkasan() {
-        boolean bolehSimpan = langkah1Selesai && ujiSelesai;
-        bSimpanKal.setEnabled(bolehSimpan);
-        if (!langkah1Selesai) {
-            tvRingkasan.setText("Selesaikan Langkah 1 (kenyaringan) dan Langkah 2 "
-                    + "(uji perintah) untuk mengisi ringkasan.");
-        } else if (!ujiSelesai) {
-            tvRingkasan.setText(String.format(Locale.US,
-                    "Kenyaringan: %.0f dB ✓ — lanjut ke uji perintah (Langkah 2).",
-                    bicaraDb));
-        } else {
-            tvRingkasan.setText(String.format(Locale.US,
-                    "Kenyaringan suara: %.0f dB • perintah lulus: %d/%d. "
-                    + "Bagus — sentuh Simpan agar AVI memakai profil Anda.",
-                    bicaraDb, jumlahLulus(), UJI.length));
-        }
-    }
-
-    private void simpan() {
-        if (!langkah1Selesai || !ujiSelesai) return;
-        AviBrain.pref(this).edit()
-                .putFloat("kal_lantai_db", lantaiDb)
-                .putFloat("kal_bicara_db", bicaraDb)
-                .putInt("kal_skor", jumlahLulus())
-                .putLong("kal_waktu", System.currentTimeMillis())
-                .apply();
-        Toast.makeText(this, "Kalibrasi suara tersimpan ✓", Toast.LENGTH_LONG).show();
-        finish();
-    }
+    // ========================== siklus hidup ==========================
 
     @Override
     protected void onPause() {
-        // mikrofon tidak boleh hidup di latar — hentikan apa pun yang berjalan
-        if (sedangDengar && pengenal != null) {
-            try { pengenal.cancel(); } catch (Exception ignored) {}
-            sedangDengar = false;
-            aktifkanTombolDengar();
-        }
-        if (sedangUkur) {
-            batalkanUkur = true;   // thread ukur berhenti & melepas mikrofon
-            tvHasil1.postDelayed(() -> {
-                if (!sedangUkur) resetTombolUkur();
-            }, 600);
-        }
+        // mikrofon tidak boleh hidup di latar — hentikan alur apa pun
+        alurJalan = false;
         super.onPause();
     }
 
     @Override
-    protected void onDestroy() {
-        if (pengenal != null) {
-            try { pengenal.destroy(); } catch (Exception ignored) {}
-            pengenal = null;
-        }
-        super.onDestroy();
+    protected void onResume() {
+        super.onResume();
+        if (!alurJalan) tampilkanMenurutKeadaan();
     }
 }

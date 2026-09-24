@@ -49,6 +49,8 @@ public class SettingsActivity extends Activity {
     private Switch swTts;
     private SeekBar sbRate;
     private Button bModel, bTes, bBersihkan, bAsisten, bSuara, bSimpan, bKalibrasi;
+    private RadioGroup rgGerbang;
+    private RadioButton rbGMati, rbGLembut, rbGKetat;
     private TextToSpeech ttsProbe;   // hanya untuk menampilkan daftar suara
 
     private boolean sedangMengisi = false;   // cegah TextWatcher menimpa nilai
@@ -97,6 +99,10 @@ public class SettingsActivity extends Activity {
         bSimpan      = findViewById(R.id.bSimpan);
         tvKalibrasi  = findViewById(R.id.tvKalibrasi);
         bKalibrasi   = findViewById(R.id.bKalibrasi);
+        rgGerbang    = findViewById(R.id.rgGerbang);
+        rbGMati      = findViewById(R.id.rbGMati);
+        rbGLembut    = findViewById(R.id.rbGLembut);
+        rbGKetat     = findViewById(R.id.rbGKetat);
 
         sbRate.setMax(100);                    // 50% .. 150% dipetakan dari 0..100
         muatNilai();
@@ -161,21 +167,27 @@ public class SettingsActivity extends Activity {
         muatStatusKalibrasi(); // segarkan bila pemilik baru saja selesai kalibrasi
     }
 
-    /** Status kalibrasi suara pemilik (disimpan KalibrasiActivity). */
+    /** Status kalibrasi suara pemilik (v2 — ProfilSuara terdaftar/terkunci). */
     private void muatStatusKalibrasi() {
-        long w = AviBrain.pref(this).getLong("kal_waktu", 0);
-        if (w == 0) {
-            tvKalibrasi.setText("Belum dikalibrasi — disarankan sekali agar AVI "
-                    + "mengenali kenyaringan & cara bicara Anda.");
+        if (!ProfilSuara.ada(this)) {
+            tvKalibrasi.setText("Belum terdaftar — AVI belum mengenali suara "
+                    + "Anda. Daftarkan sekali agar AVI bangun pada sapaan "
+                    + "Anda saja.");
+            bKalibrasi.setText("Daftarkan suara saya");
             return;
         }
-        float bic = AviBrain.pref(this).getFloat("kal_bicara_db", -60f);
-        int skor  = AviBrain.pref(this).getInt("kal_skor", 0);
-        String waktu = new SimpleDateFormat("dd MMM yyyy HH.mm", Locale.getDefault())
-                .format(new Date(w));
-        tvKalibrasi.setText("Terakhir " + waktu + " • kenyaringan "
-                + String.format(Locale.US, "%.0f", bic) + " dB • perintah "
-                + skor + "/3 lulus.");
+        long w = AviBrain.pref(this).getLong("kal_waktu", 0);
+        String waktu = w > 0
+                ? new SimpleDateFormat("d MMM yyyy HH.mm", Locale.getDefault())
+                        .format(new Date(w)) : "—";
+        float pitch = AviBrain.pref(this).getFloat("kal_pitch", 0f);
+        String mode = GerbangSapa.mode(this);
+        String label = "ketat".equals(mode) ? "Ketat"
+                : "mati".equals(mode) ? "Nonaktif" : "Lembut";
+        tvKalibrasi.setText("TERDAFTAR ✓ — " + waktu
+                + (pitch > 0 ? " • nada dasar ±" + Math.round(pitch) + " Hz" : "")
+                + " • gerbang: " + label + ".");
+        bKalibrasi.setText("Buka layar kalibrasi (terkunci)");
     }
 
     private void petunjukKey(String prov) {
@@ -300,6 +312,19 @@ public class SettingsActivity extends Activity {
         // ===== kalibrasi suara pemilik =====
         bKalibrasi.setOnClickListener(v ->
                 startActivity(new Intent(this, KalibrasiActivity.class)));
+
+        // ===== mode gerbang sapaan (lembut bawaan) =====
+        String kal = AviBrain.pref(this).getString("kal_mode", "lembut");
+        if ("mati".equals(kal)) rbGMati.setChecked(true);
+        else if ("ketat".equals(kal)) rbGKetat.setChecked(true);
+        else rbGLembut.setChecked(true);
+        rgGerbang.setOnCheckedChangeListener((grup, id) -> {
+            if (sedangMengisi) return;
+            String mode = id == R.id.rbGMati ? "mati"
+                    : id == R.id.rbGKetat ? "ketat" : "lembut";
+            AviBrain.pref(this).edit().putString("kal_mode", mode).apply();
+            muatStatusKalibrasi();   // status ikut menampilkan gerbang
+        });
 
         // ===== simpan (konfirmasi eksplisit, permintaan pemilik) =====
         bSimpan.setOnClickListener(v -> Toast.makeText(this,

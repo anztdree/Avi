@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    KALIBRASI SUARA AVI — wizard agar asisten mengenali suara & perintah
-    pemiliknya sendiri: (1) ukur kenyaringan suara pemilik dengan level
-    meter langsung, (2) uji tiga perintah nyata lewat pengenalan Android,
-    (3) uji bebas apa saja. Hasilnya disimpan sebagai profil kalibrasi.
+    KALIBRASI SUARA v2 — pendaftaran suara pemilik ala "Voice Match".
+    Tiga keadaan dalam SATU layar:
+      A) Belum terdaftar  — undangan + satu tombol Mulai.
+      B) Pendaftaran      — alur otomatis 3 langkah, tanpa tombol,
+                            instruksi berganti sendiri.
+      C) TERKUNCI         — suara terdaftar; hanya Reset ulang / Hapus.
     Gaya visual menyatu dengan Pengaturan (tema Arc cerah).
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -14,135 +16,116 @@
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="22dp">
+
+        <!-- kepala: ikon mikrofon dalam piringan lembut -->
+        <FrameLayout
+            android:layout_width="92dp" android:layout_height="92dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/lingkaran_ikon">
+            <ImageView
+                android:layout_width="40dp" android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_mic"
+                android:tint="@color/aksen"
+                android:contentDescription="Mikrofon"/>
+        </FrameLayout>
 
         <TextView
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Kalibrasi suara" android:textColor="@color/avi_teks"
-            android:textSize="26sp" android:textStyle="bold"
-            android:paddingBottom="3dp"/>
-        <TextView
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Supaya AVI benar-benar mengenali ANDA: ukur kenyaringan suara, uji perintah nyata, lihat persis apa yang didengar ponsel."
-            android:textColor="@color/avi_teks_samping" android:textSize="13sp"
-            android:paddingBottom="14dp"/>
+            android:id="@+id/tvJudul"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:text="Kenalkan AVI dengan suara Anda"
+            android:textColor="@color/avi_teks"
+            android:textSize="23sp" android:textStyle="bold"/>
 
-        <!-- ===== Langkah 1: kenyaringan ===== -->
-        <LinearLayout style="@style/KartuSetting">
-            <TextView style="@style/JudulKartu" android:text="Langkah 1 — Kenyaringan suara"/>
+        <TextView
+            android:id="@+id/tvNarasi"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="Kurang dari satu menit. Setelah terdaftar, layar ini terkunci."
+            android:textColor="@color/avi_teks_samping" android:textSize="13sp"/>
+
+        <!-- tubuh: kartu pemandu -->
+        <LinearLayout style="@style/KartuSetting"
+            android:layout_marginTop="16dp">
+
             <TextView
+                android:id="@+id/tvLangkah"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks" android:textSize="14sp"
-                android:text="Sentuh tombol di bawah, lalu baca dengan suara normal:\n\u201CHai AVI, bagaimana kabarnya hari ini?\u201D\nPengukuran berjalan ±4 detik."/>
+                android:textColor="@color/avi_teks_samping" android:textSize="11sp"
+                android:textAllCaps="true" android:letterSpacing="0.12"
+                android:text="Siap mendaftar"/>
+
+            <TextView
+                android:id="@+id/tvInstruksi"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/avi_teks" android:textSize="15sp"
+                android:lineSpacingExtra="2dp"/>
+
+            <TextView
+                android:id="@+id/tvFrasa"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:visibility="gone"
+                android:textColor="@color/aksen" android:textSize="19sp"
+                android:textStyle="bold" android:lineSpacingExtra="3dp"/>
+
             <ProgressBar
                 android:id="@+id/pbLevel"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:max="100" android:progress="0"
                 android:progressTint="@color/aksen"/>
-            <TextView
-                android:id="@+id/tvHasil1"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
-                android:paddingTop="6dp"
-                android:text="Belum diukur."/>
-            <Button
-                android:id="@+id/bLangkah1"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Mulai ukur suara"
-                android:textAllCaps="false"
-                android:background="@drawable/btn_secondary"
-                android:textColor="@color/avi_teks"/>
-        </LinearLayout>
 
-        <!-- ===== Langkah 2: uji perintah ===== -->
-        <LinearLayout style="@style/KartuSetting">
-            <TextView style="@style/JudulKartu" android:text="Langkah 2 — Uji perintah nyata"/>
             <TextView
-                android:id="@+id/tvTarget"
+                android:id="@+id/tvUmpan"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:visibility="gone"
                 android:textColor="@color/avi_teks_samping" android:textSize="12sp"/>
-            <TextView
-                android:id="@+id/tvFrasa"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks" android:textSize="20sp"
-                android:textStyle="bold"
-                android:paddingTop="2dp" android:paddingBottom="4dp"/>
-            <TextView
-                android:id="@+id/tvHasil2"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks_samping" android:textSize="13sp"/>
-            <LinearLayout
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
-                <Button
-                    android:id="@+id/bLangkah2"
-                    android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Dengarkan"
-                    android:textAllCaps="false"
-                    android:background="@drawable/btn_primary"
-                    android:textColor="#FFFFFF"/>
-                <Button
-                    android:id="@+id/bUlangi"
-                    android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginLeft="6dp"
-                    android:text="Ulangi semua"
-                    android:textAllCaps="false"
-                    android:background="@drawable/btn_secondary"
-                    android:textColor="@color/avi_teks"/>
-            </LinearLayout>
-        </LinearLayout>
 
-        <!-- ===== Langkah 3: uji bebas ===== -->
-        <LinearLayout style="@style/KartuSetting">
-            <TextView style="@style/JudulKartu" android:text="Langkah 3 — Uji bebas"/>
             <TextView
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
-                android:paddingBottom="4dp"
-                android:text="Ucapkan apa saja — tampil persis apa yang didengar ponsel. Teks inilah yang diterima AVI, jadi kalau salah, ulangi dengan ucapan lebih jelas."/>
-            <TextView
-                android:id="@+id/tvHasil3"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks" android:textSize="14sp"
-                android:paddingBottom="4dp"
-                android:text="Belum diuji."/>
-            <Button
-                android:id="@+id/bLangkah3"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Ucapkan sesuatu"
-                android:textAllCaps="false"
-                android:background="@drawable/btn_secondary"
-                android:textColor="@color/avi_teks"/>
-        </LinearLayout>
-
-        <!-- ===== Ringkasan & simpan ===== -->
-        <LinearLayout style="@style/KartuSetting">
-            <TextView style="@style/JudulKartu" android:text="Ringkasan kalibrasi"/>
-            <TextView
-                android:id="@+id/tvRingkasan"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks" android:textSize="14sp"
-                android:paddingBottom="4dp"/>
-            <Button
-                android:id="@+id/bSimpanKal"
+                android:id="@+id/tvDots"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Simpan kalibrasi"
-                android:textAllCaps="false"
-                android:background="@drawable/btn_primary"
-                android:textColor="#FFFFFF"/>
-            <TextView
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
-                android:paddingTop="6dp"
-                android:text="Kalibrasi tersimpan di ponsel Anda saja — tanpa unggah, tanpa server. Ulangi kapan pun, misalnya setelah ganti lingkungan atau cara bicara."/>
+                android:gravity="center"
+                android:visibility="gone"
+                android:textColor="@color/aksen" android:textSize="18sp"
+                android:letterSpacing="0.25"/>
         </LinearLayout>
+
+        <Button
+            android:id="@+id/bUtama"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Mulai pendaftaran"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_primary"
+            android:textColor="#FFFFFF"/>
+
+        <Button
+            android:id="@+id/bKedua"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"
+            android:text="Hapus kalibrasi"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_secondary"
+            android:textColor="@color/avi_teks"/>
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:textColor="@color/avi_teks_samping" android:textSize="11sp"
+            android:text="Profil suara tersimpan di ponsel Anda saja — tanpa unggah, tanpa server. AVI hanya membandingkan bentuk spektrum &amp; nada dasar, rekaman mentah tidak disimpan."/>
     </LinearLayout>
 </ScrollView>

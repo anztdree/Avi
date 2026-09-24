@@ -39,6 +39,14 @@ import java.util.Locale;
  * Seluruh ucapan & jawaban tersimpan sebagai transkrip di riwayat chat
  * (AviBrain.tanyaStream yang menyimpan).
  *
+ * GERBANG SAPA (kalibrasi v2): bila profil suara pemilik terdaftar dan
+ * gerbang aktif (Pengaturan → Kalibrasi suara), sesi DIBUKA lewat
+ * GerbangSapa dulu — pemilik mengucapkan "Hai AVI" dan suaranya
+ * diverifikasi (MFCC+DTW, murni Java) SEBELUM SpeechRecognizer dibuka;
+ * mikrofon dipastikan lepas dulu. Berlaku otomatis untuk kedua jalur
+ * (AviSession overlay & OrbitAssistActivity/LiveActivity) karena semua
+ * memakai mesin ini. Menyentuh orb saat gerbang = pintu dibuka pemilik.
+ *
  * Mesin ini netral UI: dipakai LiveActivity (layar penuh) dan AviSession
  * (overlay transparan asisten perangkat). Host hanya menerima peristiwa
  * lewat Pendengar — semua callback datang di thread utama.
@@ -65,6 +73,7 @@ public class LiveEngine {
 
     private SpeechRecognizer pengenal;
     private TextToSpeech tts;
+    private GerbangSapa gerbang;
     private boolean ttsSiap = false;
     private boolean hidup = false;
     private boolean sudahTidur = false;
@@ -99,16 +108,21 @@ public class LiveEngine {
         hidup = true;
         siapkanTts();
         siapkanPengenal();
-        if (izinMicAda()) {
-            jadwalMendengarkan(500);
-        } else {
+        if (!izinMicAda()) {
             p.status("Izin mikrofon belum ada — berikan lewat Pengaturan ponsel.");
+            return;
         }
+        if (GerbangSapa.aktif(ctx)) {
+            jalankanGerbang();
+            return;
+        }
+        jadwalMendengarkan(500);
     }
 
     public void hentikan() {
         hidup = false;
         handler.removeCallbacksAndMessages(null);
+        if (gerbang != null) { gerbang.hentikan(); gerbang = null; }
         if (tts != null) {
             try { tts.stop(); tts.shutdown(); } catch (Exception ignored) {}
             tts = null;
@@ -193,9 +207,59 @@ public class LiveEngine {
         jadwalMendengarkan(120);
     }
 
-    /** Lanjut mendengarkan bila sebelumnya dijeda (orb disentuh saat SIAP). */
+    /** Lanjut mendengarkan bila sebelumnya dijeda (orb disentuh saat SIAP).
+     *  Sentuhan pemilik di tengah gerbang = pintu langsung dibuka. */
     public void dengarkanLagi() {
-        if (hidup && !sudahTidur && keadaan == OrbView.SIAP) mulaiMendengarkan();
+        if (!hidup || sudahTidur || keadaan != OrbView.SIAP) return;
+        if (gerbang != null) { gerbang.hentikan(); gerbang = null; }
+        mulaiMendengarkan();
+    }
+
+    // ==================== gerbang sapa (kalibrasi v2) ====================
+
+    private void jalankanGerbang() {
+        setKeadaan(OrbView.SIAP);
+        p.status("Verifikasi suara — ucapkan \u201CHai AVI\u201D");
+        p.transkripAnda("");
+        p.teksAvi("");
+        if (gerbang != null) gerbang.hentikan();
+        gerbang = new GerbangSapa(ctx, new GerbangSapa.Panggilan() {
+            @Override public void menunggu(int kes, int maks) {
+                if (!hidup || sudahTidur) return;
+                p.status("Verifikasi suara (coba " + kes + "/" + maks
+                        + ") — ucapkan \u201CHai AVI\u201D");
+            }
+            @Override public void hasil(boolean lolos, int persen, String pesan) {
+                if (!hidup || sudahTidur) { gerbang = null; return; }
+                gerbang = null;
+                if (lolos) {
+                    p.status("Dikenali, " + AviBrain.namaPemilik(ctx)
+                            + " ✓ (" + persen + "%) — silakan bicara.");
+                    jadwalMendengarkan(250);
+                    return;
+                }
+                if ("ketat".equals(GerbangSapa.mode(ctx))) {
+                    tolakAkses();
+                    return;
+                }
+                // lembut: tetap melayani, tapi diberitahu
+                p.status("Suara belum cocok penuh (" + persen + "%) — tetap "
+                        + "saya layani, " + AviBrain.namaPemilik(ctx) + ".");
+                jadwalMendengarkan(250);
+            }
+        });
+        gerbang.mulai();
+    }
+
+    /** Mode ketat, 3× gagal: AVI menolak sopan lalu tidur. */
+    private void tolakAkses() {
+        setKeadaan(OrbView.SIAP);
+        p.status("Maaf, saya hanya melayani " + AviBrain.namaPemilik(ctx) + ".");
+        if (ttsSiap && tts != null) {
+            tts.speak("Maaf, saya hanya melayani " + AviBrain.namaPemilik(ctx)
+                    + ". AVI pamit dulu.", TextToSpeech.QUEUE_ADD, null, ID_PAMIT);
+        }
+        handler.postDelayed(this::tidurSekarang, 4500);
     }
 
     // ====================== streaming AI (berpikir) ======================
