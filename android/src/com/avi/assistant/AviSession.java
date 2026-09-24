@@ -15,14 +15,13 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
 
 /**
- * Sesi ASISTEN PERANGKAT AVI — tampilan "Orbit": layar penuh imersif
- * saat pemilik MENAHAN TOMBOL HOME.
+ * Sesi ASISTEN PERANGKAT AVI — tampilan "Orbit Lembar Bawah": seperti
+ * Google Assistant, sesi MUNCUL HANYA DI PANGKAL LAYAR dalam kartu kaca
+ * bersudut atas bulat; aplikasi sebelumnya tetap terlihat di atasnya.
  *
- * Sengaja BERBEDA dari Google Assistant (ya itu poinnya — GA punya wajah
- * sendiri, AVI juga punya wajah sendiri): kanvas gelap JARVIS dengan
- * pendaran sian/indigo, orb raksasa yang bernapas di tengah layar,
- * ucapan pemilik besar di tengah, jawaban AVI di kartu kaca, dan animasi
- * masuk yang lembut setiap kali dipanggil.
+ * Sentuh di luar lembar = sesi menutup (pola lembar bawah). Di dalam
+ * lembar: orb yang bernapas, status mesin, ucapan pemilik, dan jawaban
+ * AVI di kartu kaca — plus animasi naik lembut setiap kali dipanggil.
  *
  * Isi = mesin Mode Live yang sama (LiveEngine): dengar → pikir → jawab →
  * dengar lagi; hening beberapa detik = AVI pamit lalu sesi menutup
@@ -30,7 +29,7 @@ import android.widget.TextView;
  */
 public class AviSession extends VoiceInteractionSession implements LiveEngine.Pendengar {
 
-    private View akar;
+    private View akar, lembar;
     private OrbView orb;
     private TextView tvStatus, tvAnda, tvAvi;
     private LiveEngine mesin;
@@ -42,13 +41,17 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
     @Override
     public View onCreateContentView() {
         akar = getLayoutInflater().inflate(R.layout.overlay_avisession, null);
+        lembar = akar.findViewById(R.id.lembarSesi);
         orb = akar.findViewById(R.id.orbSesi);
         tvStatus = akar.findViewById(R.id.tvStatusSesi);
         tvAnda = akar.findViewById(R.id.tvAndaSesi);
         tvAvi = akar.findViewById(R.id.tvAviSesi);
-        // sesi selalu di kanvas gelap → orb sian elektrik (bukan warna tema)
+        // sesi selalu gelap → orb sian elektrik (bukan warna tema)
         orb.setWarnaOrb(0xFF38BDF8);
 
+        // sentuh luar lembar (area transparan) = tutup sesi; klik di
+        // dalam lembar ditelan lembar sendiri (clickable=true di XML)
+        akar.setOnClickListener(v -> finish());
         akar.findViewById(R.id.btnTutupSesi).setOnClickListener(v -> finish());
         orb.setOnClickListener(v -> {
             if (mesin == null) return;
@@ -61,8 +64,9 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
 
     @Override
     public void onShow(Bundle args, int showFlags) {
-        // jendela MENUTUPI LAYAR — kanvas gelap kita sendiri yang menutupi
-        // aplikasi di bawah (tanpa dim tambahan dari sistem).
+        // jendela transparan menutup seluruh area aplikasi HANYA untuk
+        // menangkap sentuhan; gambarannya milik lembar bawah — aplikasi
+        // di atas lembar tetap terlihat jelas (tanpa dim sistem).
         Dialog jendela = getWindow();
         if (jendela != null && jendela.getWindow() != null) {
             Window w = jendela.getWindow();
@@ -73,13 +77,16 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
                     ViewGroup.LayoutParams.MATCH_PARENT);
         }
 
-        // animasi masuk: seluruh panggung naik + memudar, orb melebar
-        // dengan pendaran singkat — sesi terasa "dipanggil", bukan muncul.
+        // animasi masuk: lembar naik dari pangkal layar + memudar, orb
+        // melebar dengan pendaran singkat — terasa "dipanggil", bukan muncul.
         if (akar != null) {
             akar.setAlpha(0f);
-            akar.setTranslationY(dip(30));
-            akar.animate().alpha(1f).translationY(0f)
-                    .setDuration(260L)
+            akar.animate().alpha(1f)
+                    .setDuration(180L)
+                    .start();
+            lembar.setTranslationY(dip(160));
+            lembar.animate().translationY(0f)
+                    .setDuration(280L)
                     .setInterpolator(new DecelerateInterpolator(1.6f))
                     .start();
             orb.setScaleX(0.82f);

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lembar bawah sesi asisten: kaca gelap JARVIS bersudut atas bulat,
+     mengapung hanya di PANGKAL layar — aplikasi di bawah tetap tampak
+     (pola lembar Google Assistant). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="#FF0B1A33"
+        android:endColor="#F6050A14"/>
+    <corners
+        android:topLeftRadius="28dp"
+        android:topRightRadius="28dp"/>
+    <stroke android:width="1dp" android:color="@color/sesi_garis"/>
+</shape>

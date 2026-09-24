@@ -10,15 +10,16 @@
 
     <!-- Tema LAYAR ORBIT (activity asisten utk perangkat low-RAM):
          translucent agar melayang di atas aplikasi sebelumnya tanpa
-         kilatan hitam; kanvas 95% milik layout sendiri; tanpa dim;
-         bar sistem menyatu dengan kanvas gelap. -->
+         kilatan hitam; isi sesi kini LEMBAR BAWAH ala Google Assistant —
+         aplikasi di bawah tetap terlihat penuh, jadi bar sistem pun
+         transparan (bukan gelap) supaya tidak ada strip penutup. -->
     <style name="TemaSesiOrbit" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowContentOverlay">@null</item>
-        <item name="android:statusBarColor">@color/sesi_bar</item>
-        <item name="android:navigationBarColor">@color/sesi_bar</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 

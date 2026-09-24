@@ -23,18 +23,19 @@ import android.widget.TextView;
  * dijalankan sebagai activity, persis model "Google Assistant Go".
  *
  * Jadi wajah "Orbit" yang tampil sebagai VoiceInteractionSession di
- * perangkat normal, di sini dihidupkan DI DALAM activity: kanvas gelap
- * JARVIS + pendaran sian/indigo + orb bernapas + LiveEngine yang sama
- * persis (dengar → pikir → jawab → dengar lagi; hening = AVI pamit lalu
- * layar menutup sendiri dan pemilik kembali ke aplikasi sebelumnya —
- * activity ini translucent, tanpa jejak di Recents).
+ * perangkat normal, di sini dihidupkan DI DALAM activity: LEMBAR BAWAH
+ * ala Google Assistant — kartu kaca gelap hanya di pangkal layar,
+ * aplikasi sebelumnya tetap terlihat; orb bernapas + LiveEngine yang
+ * sama persis (dengar → pikir → jawab → dengar lagi; hening = AVI
+ * pamit lalu layar menutup sendiri dan pemilik kembali ke aplikasi
+ * sebelumnya — activity ini translucent, tanpa jejak di Recents).
  *
  * Dua jalur, satu wajah: normal → AviSession (overlay sesi);
  * low-RAM → OrbitAssistActivity (activity). Tampilannya identik.
  */
 public class OrbitAssistActivity extends Activity implements LiveEngine.Pendengar {
 
-    private View akar;
+    private View akar, lembar;
     private OrbView orb;
     private TextView tvStatus, tvAnda, tvAvi;
     private LiveEngine mesin;
@@ -52,13 +53,17 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
 
         ViewGroup konten = findViewById(android.R.id.content);
         akar = konten.getChildAt(0);
+        lembar = akar.findViewById(R.id.lembarSesi);
         orb = akar.findViewById(R.id.orbSesi);
         tvStatus = akar.findViewById(R.id.tvStatusSesi);
         tvAnda = akar.findViewById(R.id.tvAndaSesi);
         tvAvi = akar.findViewById(R.id.tvAviSesi);
-        // sesi selalu di kanvas gelap → orb sian elektrik (bukan warna tema)
+        // sesi selalu gelap → orb sian elektrik (bukan warna tema)
         orb.setWarnaOrb(0xFF38BDF8);
 
+        // sentuh luar lembar (area transparan) = tutup; klik di dalam
+        // lembar ditelan lembar sendiri (clickable=true di XML)
+        akar.setOnClickListener(v -> finish());
         akar.findViewById(R.id.btnTutupSesi).setOnClickListener(v -> finish());
         orb.setOnClickListener(v -> {
             if (mesin == null) return;
@@ -67,12 +72,14 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
             else if (k == OrbView.SIAP) mesin.dengarkanLagi();
         });
 
-        // animasi masuk: seluruh panggung naik + memudar, orb melebar —
-        // identik dengan sesi overlay supaya kedua jalur terasa sama.
+        // animasi masuk: lembar naik dari pangkal layar + memudar, orb
+        // melebar — identik dengan sesi overlay supaya kedua jalur
+        // terasa sama.
         akar.setAlpha(0f);
-        akar.setTranslationY(dip(30));
-        akar.animate().alpha(1f).translationY(0f)
-                .setDuration(260L)
+        akar.animate().alpha(1f).setDuration(180L).start();
+        lembar.setTranslationY(dip(160));
+        lembar.animate().translationY(0f)
+                .setDuration(280L)
                 .setInterpolator(new DecelerateInterpolator(1.6f))
                 .start();
         orb.setScaleX(0.82f);
