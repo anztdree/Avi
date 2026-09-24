@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Identitas Arc: identik dengan values/ — gelap sian di semua kondisi. -->
     <style name="TemaAVI" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@color/status_bar</item>
-        <item name="android:windowBackground">@color/avi_bg</item>
+        <item name="android:windowBackground">@drawable/bg_main</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/status_bar</item>
     </style>
 </resources>

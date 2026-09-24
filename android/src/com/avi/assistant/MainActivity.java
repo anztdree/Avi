@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -72,10 +71,13 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnPengaturan).setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class)));
 
-        // chips saran: sentuh = langsung tanya
-        for (int i = 0; i < barisChips.getChildCount(); i++) {
-            TextView chip = (TextView) barisChips.getChildAt(i);
-            chip.setOnClickListener(v -> kirim(chip.getText().toString()));
+        // kartu saran (kisi 2x2): sentuh = langsung tanya
+        for (int idKartu : new int[]{R.id.chip1, R.id.chip2, R.id.chip3, R.id.chip4}) {
+            View kartu = findViewById(idKartu);
+            kartu.setOnClickListener(v -> {
+                TextView teks = (TextView) kartu.findViewWithTag("teks");
+                if (teks != null) kirim(teks.getText().toString());
+            });
         }
 
         bAksi.setOnClickListener(v -> {
@@ -250,14 +252,32 @@ public class MainActivity extends Activity {
             LinearLayout baris = new LinearLayout(MainActivity.this);
             baris.setOrientation(LinearLayout.HORIZONTAL);
             baris.setGravity(m.dariUser ? Gravity.END : Gravity.START);
-            baris.setPadding(px(6), px(4), px(6), px(4));
+            baris.setPadding(px(4), px(5), px(4), px(5));
+
+            int maksLebar = (int) (getResources().getDisplayMetrics().widthPixels * 0.78f);
+
+            // avatar orb mini di kiri untuk setiap pesan AVI (identitas Arc)
+            if (!m.dariUser) {
+                ImageView avatar = new ImageView(MainActivity.this);
+                avatar.setImageResource(R.drawable.orb_mini);
+                avatar.setContentDescription("AVI");
+                LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(px(30), px(30));
+                alp.topMargin = px(5);
+                avatar.setLayoutParams(alp);
+                baris.addView(avatar);
+            }
 
             LinearLayout gelembung = new LinearLayout(MainActivity.this);
             gelembung.setOrientation(LinearLayout.VERTICAL);
-            gelembung.setPadding(px(14), px(10), px(14), px(10));
+            gelembung.setPadding(px(17), px(13), px(17), px(13));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.82f);
+            if (m.dariUser) {
+                lp.leftMargin = px(40);
+            } else {
+                lp.leftMargin = px(11);
+                lp.rightMargin = px(40);
+            }
             gelembung.setLayoutParams(lp);
             gelembung.setBackgroundResource(m.dariUser
                     ? R.drawable.bubble_user : R.drawable.bubble_avi);
@@ -271,6 +291,8 @@ public class MainActivity extends Activity {
                     TextView tv = new TextView(MainActivity.this);
                     tv.setText(bagian[i].trim());
                     tv.setTextSize(15f);
+                    tv.setMaxWidth(maksLebar);
+                    tv.setLineSpacing(0, 1.2f);
                     // teks di gelembung gradasi (user) harus putih
                     tv.setTextColor(m.dariUser ? 0xFFFFFFFF
                             : getResources().getColor(R.color.avi_teks, getTheme()));
@@ -282,7 +304,7 @@ public class MainActivity extends Activity {
                     kartu.setBackgroundResource(R.drawable.card_kode);
                     kartu.setPadding(px(10), px(8), px(10), px(8));
                     LinearLayout.LayoutParams klp = new LinearLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                     klp.topMargin = px(6);
                     kartu.setLayoutParams(klp);
@@ -291,6 +313,7 @@ public class MainActivity extends Activity {
                     tvKode.setText(kode);
                     tvKode.setTextSize(13f);
                     tvKode.setTypeface(android.graphics.Typeface.MONOSPACE);
+                    tvKode.setMaxWidth(maksLebar - px(34));
                     tvKode.setTextColor(getResources().getColor(R.color.avi_teks, getTheme()));
                     kartu.addView(tvKode);
 

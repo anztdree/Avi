@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tombol ikon/pil kecil di bar atas: permukaan terangkat + garis tipis. -->
+<!-- Tombol pil kecil (Tutup dll): kaca gelap + garis tipis. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="20dp"/>
-    <solid android:color="@color/avi_card2"/>
+    <solid android:color="#B3111B31"/>
     <stroke android:width="1dp" android:color="@color/garis"/>
 </shape>

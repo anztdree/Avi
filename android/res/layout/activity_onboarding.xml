@@ -1,13 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Onboarding "AVI Arc": orb mini + salam besar, langkah dalam kartu kaca,
+     tombol utama gradasi sian. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/avi_bg"
     android:padding="22dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="34dp" android:layout_height="34dp"
+            android:src="@drawable/orb_mini"
+            android:contentDescription=""/>
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="AVI" android:textColor="@color/avi_teks"
+            android:textSize="21sp" android:textStyle="bold"
+            android:letterSpacing="0.10"/>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvSalamOnboard"
         android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:textColor="@color/avi_teks" android:textSize="27sp"
         android:textStyle="bold"/>
 
@@ -38,8 +58,8 @@
                 <TextView
                     android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="1. PILIH PENYEDIA AI"
-                    android:textColor="@color/avi_teks_samping" android:textSize="11sp"
-                    android:textStyle="bold" android:letterSpacing="0.12"
+                    android:textColor="@color/aksen_pudar" android:textSize="11sp"
+                    android:textStyle="bold" android:letterSpacing="0.14"
                     android:paddingBottom="10dp"/>
 
                 <RadioGroup
@@ -95,8 +115,8 @@
             <TextView
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="2. PILIH MODEL"
-                android:textColor="@color/avi_teks_samping" android:textSize="11sp"
-                android:textStyle="bold" android:letterSpacing="0.12"
+                android:textColor="@color/aksen_pudar" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.14"
                 android:paddingBottom="10dp"/>
 
             <Button

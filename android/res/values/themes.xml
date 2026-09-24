@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Identitas "AVI Arc": latar kanvas dengan pendaran sian di pojok
+         atas + indigo di bawah, status bar menyatu (gelap di semua kondisi). -->
+    <style name="TemaAVI" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@color/status_bar</item>
+        <item name="android:windowBackground">@drawable/bg_main</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/status_bar</item>
+    </style>
+
     <style name="KartuSetting">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
@@ -12,11 +21,11 @@
     <style name="JudulKartu">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/avi_teks_samping</item>
+        <item name="android:textColor">@color/aksen_pudar</item>
         <item name="android:textSize">11sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">true</item>
-        <item name="android:letterSpacing">0.12</item>
+        <item name="android:letterSpacing">0.14</item>
         <item name="android:paddingBottom">8dp</item>
     </style>
 
@@ -29,23 +38,18 @@
         <item name="android:paddingBottom">5dp</item>
     </style>
 
-    <style name="ChipSaran">
-        <item name="android:layout_width">wrap_content</item>
+    <!-- Kartu saran hero: kisi 2 kolom, ikon sian + teks -->
+    <style name="KartuSaran">
+        <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:background">@drawable/chip_bg</item>
-        <item name="android:textColor">@color/avi_teks</item>
-        <item name="android:textSize">13sp</item>
-        <item name="android:paddingLeft">18dp</item>
-        <item name="android:paddingRight">18dp</item>
-        <item name="android:paddingTop">11dp</item>
-        <item name="android:paddingBottom">11dp</item>
-        <item name="android:layout_marginRight">10dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/kartu_saran</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
         <item name="android:clickable">true</item>
-    </style>
-
-    <style name="TemaAVI" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">@color/status_bar</item>
-        <item name="android:windowBackground">@color/avi_bg</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:foreground">?android:attr/selectableItemBackground</item>
     </style>
 </resources>

@@ -1,120 +1,192 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- ===================== LAYAR UTAMA "AVI Arc" =====================
+     Struktur baru total (bukan aplikasi chat biasa):
+     - Bar atas: avatar orb mini + wordmark + titik status + tombol ikon bulat
+     - Hero: orb besar bernapas + salam besar + KISI KARTU SARAN 2x2
+     - Obrolan: gelembung AVI beravatar kiri / pil gradasi user kanan
+     - Input: pil kaca melayang + tombol aksi gradasi
+==================================================================== -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/avi_bg">
+    android:orientation="vertical">
 
-    <!-- bar atas: wordmark + aksi pil -->
+    <!-- ==== bar atas ==== -->
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="18dp" android:paddingRight="18dp"
-        android:paddingTop="14dp" android:paddingBottom="10dp">
+        android:paddingTop="14dp" android:paddingBottom="8dp">
 
-        <LinearLayout
+        <ImageView
+            android:layout_width="30dp" android:layout_height="30dp"
+            android:src="@drawable/orb_mini"
+            android:contentDescription="AVI"/>
+
+        <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_marginLeft="10dp"
+            android:text="AVI" android:textColor="@color/avi_teks"
+            android:textSize="19sp" android:textStyle="bold"
+            android:letterSpacing="0.10"/>
 
-            <TextView
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="AVI" android:textColor="@color/avi_teks"
-                android:textSize="24sp" android:textStyle="bold"
-                android:letterSpacing="0.06"/>
+        <View
+            android:layout_width="7dp" android:layout_height="7dp"
+            android:layout_marginLeft="9dp"
+            android:background="@drawable/titik_status"/>
 
-            <TextView
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="ASISTEN PRIBADI" android:textColor="@color/avi_teks_samping"
-                android:textSize="10sp" android:textStyle="bold"
-                android:letterSpacing="0.22"/>
-        </LinearLayout>
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
+            android:text="Siap" android:textColor="@color/avi_teks_samping"
+            android:textSize="11sp" android:letterSpacing="0.06"/>
 
         <Space
             android:layout_width="0dp" android:layout_height="1dp"
             android:layout_weight="1"/>
 
-        <TextView
+        <ImageView
             android:id="@+id/btnBaru"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Baru" android:textColor="@color/avi_teks"
-            android:textSize="13sp" android:textStyle="bold"
-            android:background="@drawable/btn_pil"
-            android:paddingLeft="16dp" android:paddingRight="16dp"
-            android:paddingTop="9dp" android:paddingBottom="9dp"/>
+            android:layout_width="40dp" android:layout_height="40dp"
+            android:background="@drawable/lingkaran_ikon"
+            android:src="@drawable/ic_baru"
+            android:padding="10dp"
+            android:contentDescription="Percakapan baru"/>
 
-        <TextView
+        <ImageView
             android:id="@+id/btnPengaturan"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:text="Setelan" android:textColor="@color/avi_teks_samping"
-            android:textSize="13sp" android:textStyle="bold"
-            android:background="@drawable/btn_pil"
-            android:paddingLeft="16dp" android:paddingRight="16dp"
-            android:paddingTop="9dp" android:paddingBottom="9dp"/>
+            android:layout_width="40dp" android:layout_height="40dp"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/lingkaran_ikon"
+            android:src="@drawable/ic_gear"
+            android:padding="10dp"
+            android:contentDescription="Pengaturan"/>
     </LinearLayout>
 
-    <!-- hero: sapaan + orb + chips (hanya saat chat kosong) -->
+    <!-- ==== hero (hanya saat obrolan kosong) ==== -->
     <LinearLayout
         android:id="@+id/heroBox"
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:paddingTop="18dp" android:paddingBottom="18dp"
-        android:paddingLeft="24dp" android:paddingRight="24dp">
+        android:paddingTop="20dp" android:paddingBottom="12dp"
+        android:paddingLeft="20dp" android:paddingRight="20dp">
 
         <com.avi.assistant.OrbView
             android:id="@+id/orbHero"
-            android:layout_width="112dp" android:layout_height="112dp"/>
+            android:layout_width="136dp" android:layout_height="136dp"/>
 
         <TextView
             android:id="@+id/tvSalam"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:textColor="@color/avi_teks" android:textSize="25sp"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:textColor="@color/avi_teks" android:textSize="29sp"
             android:textStyle="bold"/>
 
         <TextView
             android:id="@+id/tvSub"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="7dp"
+            android:gravity="center"
             android:textColor="@color/avi_teks_samping" android:textSize="14sp"/>
 
-        <HorizontalScrollView
+        <!-- kisi kartu saran 2 x 2 -->
+        <LinearLayout
+            android:id="@+id/barisChips"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:scrollbars="none">
+            android:orientation="vertical"
+            android:layout_marginTop="26dp">
 
             <LinearLayout
-                android:id="@+id/barisChips"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout android:id="@+id/chip1" style="@style/KartuSaran">
+                    <ImageView
+                        android:layout_width="20dp" android:layout_height="20dp"
+                        android:src="@drawable/ic_saran_jam"
+                        android:contentDescription=""/>
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="9dp"
+                        android:tag="teks"
+                        android:text="Buatkan alarm pagi"
+                        android:textColor="@color/avi_teks" android:textSize="13sp"/>
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="12dp" android:layout_height="1dp"/>
+
+                <LinearLayout android:id="@+id/chip2" style="@style/KartuSaran">
+                    <ImageView
+                        android:layout_width="20dp" android:layout_height="20dp"
+                        android:src="@drawable/ic_saran_lelucon"
+                        android:contentDescription=""/>
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="9dp"
+                        android:tag="teks"
+                        android:text="Ceritakan lelucon singkat"
+                        android:textColor="@color/avi_teks" android:textSize="13sp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <TextView style="@style/ChipSaran" android:text="Buatkan alarm pagi"/>
-                <TextView style="@style/ChipSaran" android:text="Ceritakan lelucon singkat"/>
-                <TextView style="@style/ChipSaran" android:text="Ide menu makan malam"/>
-                <TextView style="@style/ChipSaran" android:text="Jelaskan apa itu AI"/>
+                <LinearLayout android:id="@+id/chip3" style="@style/KartuSaran">
+                    <ImageView
+                        android:layout_width="20dp" android:layout_height="20dp"
+                        android:src="@drawable/ic_saran_makan"
+                        android:contentDescription=""/>
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="9dp"
+                        android:tag="teks"
+                        android:text="Ide menu makan malam"
+                        android:textColor="@color/avi_teks" android:textSize="13sp"/>
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="12dp" android:layout_height="1dp"/>
+
+                <LinearLayout android:id="@+id/chip4" style="@style/KartuSaran">
+                    <ImageView
+                        android:layout_width="20dp" android:layout_height="20dp"
+                        android:src="@drawable/ic_saran_ai"
+                        android:contentDescription=""/>
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="9dp"
+                        android:tag="teks"
+                        android:text="Jelaskan apa itu AI"
+                        android:textColor="@color/avi_teks" android:textSize="13sp"/>
+                </LinearLayout>
             </LinearLayout>
-        </HorizontalScrollView>
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- riwayat chat -->
+    <!-- ==== riwayat obrolan ==== -->
     <ListView
         android:id="@+id/daftarChat"
         android:layout_width="match_parent" android:layout_height="0dp"
         android:layout_weight="1"
         android:divider="@null"
-        android:paddingLeft="14dp" android:paddingRight="14dp"
-        android:paddingTop="6dp" android:paddingBottom="8dp"
+        android:paddingLeft="16dp" android:paddingRight="16dp"
+        android:paddingTop="6dp" android:paddingBottom="10dp"
         android:scrollbars="none"
         android:clipToPadding="false"/>
 
-    <!-- input bar -->
+    <!-- ==== input melayang ==== -->
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="bottom"
-        android:paddingLeft="14dp" android:paddingRight="14dp"
-        android:paddingTop="8dp" android:paddingBottom="12dp">
+        android:paddingLeft="16dp" android:paddingRight="16dp"
+        android:paddingTop="6dp" android:paddingBottom="16dp">
 
         <EditText
             android:id="@+id/etInput"
@@ -127,12 +199,12 @@
             android:textSize="15sp"
             android:maxLines="4"
             android:inputType="textCapSentences|textMultiLine"
-            android:paddingLeft="20dp" android:paddingRight="20dp"
-            android:paddingTop="14dp" android:paddingBottom="14dp"/>
+            android:paddingLeft="22dp" android:paddingRight="22dp"
+            android:paddingTop="15dp" android:paddingBottom="15dp"/>
 
         <ImageView
             android:id="@+id/bAksi"
-            android:layout_width="54dp" android:layout_height="54dp"
+            android:layout_width="52dp" android:layout_height="52dp"
             android:layout_marginLeft="10dp"
             android:background="@drawable/lingkaran_aksi"
             android:src="@drawable/ic_mic"

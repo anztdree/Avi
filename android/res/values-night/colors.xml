@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Palet GELAP (bawaan — wajah modern AVI: navy pekat + aksen gradasi) -->
-    <color name="avi_bg">#0A0E17</color>
-    <color name="avi_card">#131928</color>
-    <color name="avi_card2">#1A2236</color>
-    <color name="avi_teks">#F2F5FC</color>
-    <color name="avi_teks_samping">#8E99B0</color>
-    <color name="gelembung_avi">#1A2236</color>
-    <color name="gelembung_user">#4F7CFF</color>
-    <color name="aksen">#6D8CFF</color>
-    <color name="aksen_muda">#9B7CFF</color>
-    <color name="garis">#232C42</color>
-    <color name="status_bar">#0A0E17</color>
-    <color name="dasar_kode">#0D1422</color>
-    <color name="kaca_sesi">#E6111726</color>
+    <!-- Identitas Arc: file ini identik dengan values/ — tema gelap sian
+         dipaksa menyala di semua kondisi (migrasi di AviBrain). -->
+    <color name="avi_bg">#05070F</color>
+    <color name="avi_card">#0C1424</color>
+    <color name="avi_card2">#111B31</color>
+    <color name="avi_teks">#EAF1FF</color>
+    <color name="avi_teks_samping">#7E8BAA</color>
+    <color name="gelembung_avi">#101A2E</color>
+    <color name="gelembung_user">#2F6BFF</color>
+    <color name="aksen">#38BDF8</color>
+    <color name="aksen_muda">#2563EB</color>
+    <color name="aksen_pudar">#5EC8F8</color>
+    <color name="titik_aksi">#34D399</color>
+    <color name="garis">#1D2A47</color>
+    <color name="garis_terang">#2A3C63</color>
+    <color name="status_bar">#05070F</color>
+    <color name="dasar_kode">#060B16</color>
+    <color name="kaca_sesi">#F20A101C</color>
 </resources>

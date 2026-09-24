@@ -5,5 +5,5 @@
     <string name="pengaturan">Pengaturan</string>
     <string name="sedang_berpikir">AVI sedang berpikir…</string>
     <string name="hint_nama_pemilik">Nama panggilan Anda, mis. Pak Budi / Sir</string>
-    <string name="versi">AVI v1.1 — Mode Live free-flowing (hening = AVI tidur, durasi bisa diatur) + asisten perangkat: tahan tombol home untuk memanggil AVI di atas aplikasi mana pun. Ikon adaptif orb, pengaturan diperluas (suara TTS, daya ingat AI). Asisten pribadi Android native, tanpa server perantara; otak AI memakai API key milik Anda.</string>
+    <string name="versi">AVI v1.1 — Antarmuka baru "Arc": identitas gelap sian tunggal (pilihan tema/aksen lama dihapus otomatis saat pertama kali dibuka), kanvas berpendar, kartu saran 2x2, gelembung chat beravatar orb, header ikon, transkrip Mode Live dalam kartu kaca. Mode Live free-flowing (hening = AVI tidur, durasi bisa diatur) + asisten perangkat: tahan tombol home untuk memanggil AVI di atas aplikasi mana pun. Asisten pribadi Android native, tanpa server perantara; otak AI memakai API key milik Anda.</string>
 </resources>

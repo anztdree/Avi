@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Avatar orb mini statis untuk gelembung chat: pendaran + cincin +
+     inti gradasi sian. Versi murah (tanpa animasi) dari OrbView. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <gradient android:type="radial" android:gradientRadius="20dp"
+                android:startColor="#5938BDF8"
+                android:endColor="#0038BDF8"/>
+        </shape>
+    </item>
+    <item android:left="6dp" android:top="6dp"
+        android:right="6dp" android:bottom="6dp">
+        <shape android:shape="oval">
+            <stroke android:width="1.5dp" android:color="#6638BDF8"/>
+            <solid android:color="#00101A2E"/>
+        </shape>
+    </item>
+    <item android:left="10dp" android:top="10dp"
+        android:right="10dp" android:bottom="10dp">
+        <shape android:shape="oval">
+            <gradient android:type="linear" android:angle="315"
+                android:startColor="#9BE4FF"
+                android:endColor="@color/aksen_muda"/>
+        </shape>
+    </item>
+</layer-list>

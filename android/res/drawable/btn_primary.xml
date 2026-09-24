@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tombol utama: pil gradasi biru→ungu (tanda tangan visual AVI). -->
+<!-- Tombol utama: pil gradasi sian→indigo (tanda tangan visual Arc). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="26dp"/>
-    <gradient android:type="linear" android:angle="0"
+    <corners android:radius="27dp"/>
+    <gradient android:type="linear" android:angle="315"
         android:startColor="@color/aksen"
         android:endColor="@color/aksen_muda"/>
 </shape>

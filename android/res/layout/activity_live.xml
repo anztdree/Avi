@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- ===================== MODE LIVE "AVI Arc" =====================
+     Panggung sinematik: orb besar di atas pendaran kanvas, status sian,
+     transkrip dalam kartu kaca (Anda = garis sian, AVI = panel gelap).
+================================================================== -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/avi_bg"
     android:fitsSystemWindows="true">
 
     <LinearLayout
@@ -17,8 +20,8 @@
             android:text="Tutup" android:textColor="@color/avi_teks"
             android:textSize="13sp" android:textStyle="bold"
             android:background="@drawable/btn_pil"
-            android:paddingLeft="16dp" android:paddingRight="16dp"
-            android:paddingTop="9dp" android:paddingBottom="9dp"/>
+            android:paddingLeft="18dp" android:paddingRight="18dp"
+            android:paddingTop="10dp" android:paddingBottom="10dp"/>
 
         <Space
             android:layout_width="0dp" android:layout_height="1dp"
@@ -26,53 +29,59 @@
 
         <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="MODE LIVE" android:textColor="@color/avi_teks_samping"
+            android:layout_marginRight="26dp"
+            android:text="MODE LIVE" android:textColor="@color/aksen_pudar"
             android:textSize="12sp" android:textStyle="bold"
-            android:letterSpacing="0.2"
-            android:paddingRight="30dp"/>
+            android:letterSpacing="0.24"/>
     </LinearLayout>
 
     <com.avi.assistant.OrbView
         android:id="@+id/orbLive"
-        android:layout_width="220dp" android:layout_height="220dp"
+        android:layout_width="236dp" android:layout_height="236dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="14dp"/>
+        android:layout_marginTop="10dp"/>
 
     <TextView
         android:id="@+id/tvStatusLive"
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:gravity="center"
-        android:textColor="@color/avi_teks_samping" android:textSize="14sp"
-        android:layout_marginTop="12dp"
+        android:textColor="@color/aksen_pudar" android:textSize="15sp"
+        android:layout_marginTop="10dp"
         android:paddingLeft="24dp" android:paddingRight="24dp"/>
 
     <ScrollView
         android:id="@+id/scrollTranskrip"
         android:layout_width="match_parent" android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="16dp"
         android:fillViewport="true"
         android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingLeft="24dp" android:paddingRight="24dp"
+            android:paddingLeft="22dp" android:paddingRight="22dp"
             android:paddingBottom="16dp">
 
             <TextView
                 android:id="@+id/tvAndaLive"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/avi_teks" android:textSize="18sp"
+                android:background="@drawable/kartu_saran"
+                android:paddingLeft="18dp" android:paddingRight="18dp"
+                android:paddingTop="14dp" android:paddingBottom="14dp"
+                android:textColor="@color/avi_teks" android:textSize="17sp"
                 android:textStyle="bold"
-                android:lineSpacingMultiplier="1.2"/>
+                android:lineSpacingMultiplier="1.25"/>
 
             <TextView
                 android:id="@+id/tvAviLive"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:textColor="@color/avi_teks" android:textSize="16sp"
-                android:lineSpacingMultiplier="1.3"/>
+                android:background="@drawable/bubble_avi"
+                android:paddingLeft="18dp" android:paddingRight="18dp"
+                android:paddingTop="14dp" android:paddingBottom="14dp"
+                android:textColor="@color/avi_teks" android:textSize="15sp"
+                android:lineSpacingMultiplier="1.35"/>
         </LinearLayout>
     </ScrollView>
 

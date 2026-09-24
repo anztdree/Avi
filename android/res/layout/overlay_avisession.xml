@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Kartu obrolan transparan ala Google Assistant: AVI dipanggil lewat
-     tahan tombol home / sapu sudut bawah, kartu ini melayang di bawah
-     layar di atas aplikasi apa pun. -->
+<!-- Kartu obrolan transparan ala Google Assistant — identitas Arc:
+     panel gelap, wordmark + titik status, orb sian, tutup pil kaca. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -15,15 +14,21 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
+        <ImageView
+            android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/orb_mini"
+            android:contentDescription=""/>
+
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginLeft="9dp"
             android:text="AVI"
             android:textColor="@color/avi_teks"
-            android:textSize="18sp"
+            android:textSize="17sp"
             android:textStyle="bold"
-            android:letterSpacing="0.06"/>
+            android:letterSpacing="0.10"/>
 
         <TextView
             android:id="@+id/btnTutupSesi"
@@ -33,23 +38,23 @@
             android:textColor="@color/avi_teks_samping"
             android:textSize="13sp" android:textStyle="bold"
             android:background="@drawable/btn_pil"
-            android:paddingLeft="14dp" android:paddingRight="14dp"
+            android:paddingLeft="15dp" android:paddingRight="15dp"
             android:paddingTop="8dp" android:paddingBottom="8dp"/>
     </LinearLayout>
 
     <com.avi.assistant.OrbView
         android:id="@+id/orbSesi"
-        android:layout_width="140dp"
-        android:layout_height="140dp"
+        android:layout_width="136dp"
+        android:layout_height="136dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="6dp"/>
+        android:layout_marginTop="8dp"/>
 
     <TextView
         android:id="@+id/tvStatusSesi"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:textColor="@color/avi_teks_samping"
+        android:textColor="@color/aksen_pudar"
         android:textSize="13sp"/>
 
     <TextView

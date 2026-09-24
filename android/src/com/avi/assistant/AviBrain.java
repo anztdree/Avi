@@ -367,13 +367,12 @@ public final class AviBrain {
 
     // ============================ warna aksen ============================
 
+    /**
+     * Aksen kini bagian identitas Arc (sian elektrik) — tidak bisa dipilih.
+     * Dipakai untuk teks aksi (mis. "Salin") dan warna orb.
+     */
     public static int warnaAksen(Context c) {
-        switch (pref(c).getString("aksen", "biru")) {
-            case "hijau": return 0xFF2E9E5B;
-            case "ungu": return 0xFF7C4DE0;
-            case "oranye": return 0xFFE8853B;
-            default: return 0xFF3B6FE0;
-        }
+        return 0xFF38BDF8;
     }
 
     public static int campurWarna(int a, int b, float t) {
@@ -539,13 +538,30 @@ public final class AviBrain {
 
     // ============================ tema ============================
 
+    /**
+     * Identitas visual AVI kini TUNGGAL: "Arc" — gelap sian permanen.
+     * Pemilik menilai sistem tema lama membingungkan dan membuat AVI
+     * terlihat tidak berubah; sejak versi ini tema tidak bisa dipilih lagi.
+     */
     public static boolean temaGelap(Context c) {
-        // bawaan GELAP — wajah modern AVI (pemilik minta tampilan modern)
-        return !"cerah".equals(pref(c).getString("tema", "gelap"));
+        return true;
     }
 
-    /** Paksa context memakai mode ui sesuai tema terpilih (bawaan: gelap). */
+    /** Sudah membuang selera tema/aksen versi lama di instalasi ini? */
+    private static boolean migrasiTemaSudah = false;
+
+    /**
+     * MIGRASI PENTING: instalasi lama menyimpan pref tema=cerah/aksen=... —
+     * itulah kenapa APK baru terlihat "tidak berubah". Pref itu dibuang
+     * sekali per proses, lalu identitas Arc dipaksa menyala.
+     */
     public static Context terapkanTema(Context dasar) {
+        if (!migrasiTemaSudah) {
+            migrasiTemaSudah = true;
+            try {
+                pref(dasar).edit().remove("tema").remove("aksen").apply();
+            } catch (Exception ignored) {}
+        }
         boolean gelap = temaGelap(dasar);
         Configuration cfg = new Configuration(dasar.getResources().getConfiguration());
         int sekarang = cfg.uiMode & Configuration.UI_MODE_NIGHT_MASK;

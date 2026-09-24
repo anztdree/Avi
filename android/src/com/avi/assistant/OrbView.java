@@ -23,7 +23,7 @@ public class OrbView extends View {
     public static final int BICARA = 3;
 
     private int keadaan = SIAP;
-    private int warna = 0xFF3B6FE0;
+    private int warna = 0xFF38BDF8;   // sian elektrik — identitas Arc
 
     private float rmsTarget = 0f;   // 0..1 dari onRmsChanged
     private float rmsLembut = 0f;   // smoothing agar gerak halus
