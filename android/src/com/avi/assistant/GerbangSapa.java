@@ -88,19 +88,43 @@ public final class GerbangSapa {
 
     public boolean hidup() { return jalan; }
 
+    // ============================ buka mikrofon ============================
+
+    /**
+     * Buka AudioRecord 16 kHz secara TAHAN BANTING: dua sumber dicoba
+     * (VOICE_RECOGNITION → MIC), tiap sumber dua kali dengan jeda —
+     * mikrofon yang sempat dipegang layanan hotword/aplikasi lain sempat
+     * membutuhkan waktu lepas. Null = benar-benar gagal (pesan ke UI).
+     */
+    public static AudioRecord bukaMikrofon() {
+        int[] sumber = { MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                         MediaRecorder.AudioSource.MIC };
+        for (int coba = 0; coba < 4; coba++) {
+            try {
+                int minBuf = AudioRecord.getMinBufferSize(Dsp.SR,
+                        AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+                if (minBuf <= 0) minBuf = 8192;
+                AudioRecord ar = new AudioRecord(sumber[coba % sumber.length],
+                        Dsp.SR, AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT, Math.max(minBuf, 8192));
+                if (ar.getState() == AudioRecord.STATE_INITIALIZED) return ar;
+                try { ar.release(); } catch (Exception ignored) {}
+            } catch (Throwable ignored) { }
+            try { Thread.sleep(450); } catch (InterruptedException e) { return null; }
+        }
+        return null;
+    }
+
     // ================================ loop ================================
 
     private void loop() {
         AudioRecord ar = null;
         boolean selesaiKirim = false;
         try {
-            int minBuf = AudioRecord.getMinBufferSize(Dsp.SR,
-                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-            ar = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                    Dsp.SR, AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, Math.max(minBuf, 8192));
-            if (ar.getState() != AudioRecord.STATE_INITIALIZED) {
-                kirimHasil(false, 0, "Mikrofon tidak bisa dibuka.");
+            ar = bukaMikrofon();
+            if (ar == null) {
+                kirimHasil(false, 0, "Mikrofon tidak bisa dibuka — tutup "
+                        + "aplikasi lain yang memakai mikrofon, lalu coba lagi.");
                 selesaiKirim = true;
                 return;
             }

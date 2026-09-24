@@ -22,10 +22,12 @@ import java.util.ArrayList;
  */
 public final class KunciSapa {
 
-    /** Ambang DTW mode Lembut (OR dengan skor pembicara). */
-    public static final double BATAS_LEMBUT = 0.40;
+    /** Ambang DTW mode Lembut (OR dengan skor pembicara).
+     *  Dikalibrasi ulang lewat uji JVM: pemilik 3,8-4,4 • asing 7,5-8,2
+     *  (skala lama 0,40 terbukti salah skala sepuluh kali lipat). */
+    public static final double BATAS_LEMBUT = 5.4;
     /** Ambang DTW mode Ketat (AND dengan skor pembicara). */
-    public static final double BATAS_KETAT = 0.32;
+    public static final double BATAS_KETAT = 4.7;
 
     public final double[][][] template;   // [take][frame][13]
 

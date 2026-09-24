@@ -259,6 +259,28 @@
                 android:text="Setelah AVI terpilih, tahan tombol home di layar mana pun (navigasi gestur: sapu dari sudut kiri/kanan bawah) — kartu obrolan transparan AVI muncul di atas aplikasi, seperti Google Assistant. Pemicu dipegang sistem Android: tidak ada layanan latar, baterai tetap aman. Jika AVI belum muncul dalam daftarnya, reboot HP lalu buka lagi."/>
         </LinearLayout>
 
+        <!-- ===== Orb melayang (di atas aplikasi lain) ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Orb melayang"/>
+            <TextView
+                android:id="@+id/tvOrb"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks" android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+            <Button
+                android:id="@+id/bOrb"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Beri izin muncul di atas aplikasi"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"/>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingTop="6dp"
+                android:text="Dengan izin ini, tahan tombol home memunculkan orb &amp; obrolan AVI DI ATAS aplikasi yang sedang dipakai — tanpa pindah aplikasi. Ketuk orb = obrolan; geser = pindah posisi; tahan = tutup."/>
+        </LinearLayout>
+
         <Button
             android:id="@+id/bSimpan"
             android:layout_width="match_parent" android:layout_height="54dp"

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    LEMBAR MELAYANG — lembar obrolan compact milik OrbLayanan (jendela
+    overlay DI ATAS aplikasi apa pun yang sedang dipakai). Sengaja TIDAK
+    memakai layar penuh: jendela hanya sebesar kartu ini, sentuhan di
+    luar kartu tetamewas ke aplikasi di bawah. ID sama persis dengan
+    overlay_avisession.xml supaya perilaku kedua jalur identik.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/lembarSesi"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/lembar_orbit"
+    android:clickable="true"
+    android:paddingLeft="20dp"
+    android:paddingRight="20dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="18dp">
+
+    <!-- gagang lembar -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="8dp"
+        android:alpha="0.5"
+        android:background="@drawable/pil_genggam"/>
+
+    <!-- kepala: wordmark + tombol ✕ (mengecilkan ke orb, bukan mematikan) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/orb_mini"
+            android:contentDescription=""/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="8dp"
+            android:text="AVI"
+            android:textColor="@color/sesi_samping"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.18"/>
+
+        <FrameLayout
+            android:id="@+id/btnTutupSesi"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/pil_tutup"
+            android:contentDescription="Kecilkan ke orb">
+
+            <ImageView
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_tutup"
+                android:contentDescription=""/>
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- orb: wajah asisten -->
+    <com.avi.assistant.OrbView
+        android:id="@+id/orbSesi"
+        android:layout_width="104dp"
+        android:layout_height="104dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="4dp"/>
+
+    <!-- status mesin -->
+    <TextView
+        android:id="@+id/tvStatusSesi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:gravity="center"
+        android:textAllCaps="true"
+        android:letterSpacing="0.14"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@color/sesi_aksen"
+        android:textSize="11sp"
+        android:textStyle="bold"/>
+
+    <!-- ucapan pemilik -->
+    <TextView
+        android:id="@+id/tvAndaSesi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:visibility="gone"
+        android:textColor="@color/sesi_teks"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:lineSpacingMultiplier="1.2"
+        android:maxLines="2"
+        android:ellipsize="end"/>
+
+    <!-- jawaban AVI -->
+    <TextView
+        android:id="@+id/tvAviSesi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        android:background="@drawable/kartu_jawaban"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="11dp"
+        android:paddingBottom="11dp"
+        android:visibility="gone"
+        android:textColor="@color/sesi_teks"
+        android:textSize="14sp"
+        android:lineSpacingMultiplier="1.3"
+        android:maxLines="4"
+        android:ellipsize="end"/>
+
+    <!-- petunjuk halus -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:text="Sentuh di luar kartu tetap menyentuh aplikasi • ✕ kecilkan ke orb"
+        android:textColor="@color/sesi_samping"
+        android:textSize="10sp"
+        android:letterSpacing="0.05"/>
+</LinearLayout>

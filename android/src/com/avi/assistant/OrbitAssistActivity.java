@@ -1,8 +1,14 @@
 package com.avi.assistant;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
@@ -10,36 +16,41 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
 
 /**
- * LAYAR ORBIT sebagai ACTIVITY — jalur asisten perangkat untuk perangkat
- * yang ditandai low-RAM (umum di HP itel/Transsion seperti itel S23).
+ * PINTU ASISTEN versi ACTIVITY — kini TRAMPOLIN (b13).
+ *
+ * Latar belakang permintaan pemilik (2026-09-24): "kok malah munculkan
+ * orb dan balik buka AVI itu ama aja bohong" — dulu activity ini
+ * MENJADI layarnya sendiri, jadi tahan tombol home terasa seperti
+ * membuka aplikasi AVI. Sekarang: bila izin "muncul di atas aplikasi
+ * lain" sudah ada, activity ini hanya MEMULAI OrbLayanan (jendela
+ * melayang SYSTEM_ALERT_WINDOW: orb + lembar obrolan compact DI ATAS
+ * aplikasi apa pun) lalu menutup diri — aplikasi yang sedang dipakai
+ * tidak pernah tertutup.
+ *
+ * Tanpa izin melayang: ditawarkan SEKALI (dialog), lalu jatuh ke jalur
+ * lama — lembar bawah di dalam activity ini (tetap berfungsi normal).
+ * Izin dapat diberikan kapan saja lewat Pengaturan → Orb melayang.
  *
  * KENAPA ADA FILE INI (hasil penelusuran kode sumber AOSP 12):
  * AssistManager.startAssist() membaca isi Settings.Secure.ASSISTANT —
  * bila isinya BUKAN VoiceInteractionService yang aktif, sistem TIDAK
  * menampilkan sesi overlay, melainkan meluncurkan ACTIVITY ber-intent
- * ACTION_ASSIST (startAssistActivity). Di perangkat low-RAM, jalur
- * VoiceInteractionService bahkan dilewati saat kualifikasi
- * (AssistantRoleBehavior.getQualifyingPackagesAsUser) — asisten selalu
- * dijalankan sebagai activity, persis model "Google Assistant Go".
- *
- * Jadi wajah "Orbit" yang tampil sebagai VoiceInteractionSession di
- * perangkat normal, di sini dihidupkan DI DALAM activity: LEMBAR BAWAH
- * ala Google Assistant — kartu kaca gelap hanya di pangkal layar,
- * aplikasi sebelumnya tetap terlihat; orb bernapas + LiveEngine yang
- * sama persis (dengar → pikir → jawab → dengar lagi; hening = AVI
- * pamit lalu layar menutup sendiri dan pemilik kembali ke aplikasi
- * sebelumnya — activity ini translucent, tanpa jejak di Recents).
- *
- * Dua jalur, satu wajah: normal → AviSession (overlay sesi);
- * low-RAM → OrbitAssistActivity (activity). Tampilannya identik.
+ * ACTION_ASSIST (startAssistActivity). Di perangkat low-RAM (umum di
+ * HP itel/Transsion seperti itel S23) jalur VoiceInteractionService
+ * bahkan dilewati saat kualifikasi — asisten selalu dijalankan sebagai
+ * activity, persis model "Google Assistant Go". Jadi activity inilah
+ * titik masuk asisten di HP pemilik — dan kini ia hanya trampolin.
  */
 public class OrbitAssistActivity extends Activity implements LiveEngine.Pendengar {
+
+    private static final String PREF_TAWARAN = "izin_layang_ditawarkan";
 
     private View akar, lembar;
     private OrbView orb;
     private TextView tvStatus, tvAnda, tvAvi;
     private LiveEngine mesin;
     private boolean mesinJalan;
+    private boolean layarSiap = false;
 
     @Override
     protected void attachBaseContext(Context baru) {
@@ -49,6 +60,72 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (cobaLayananMelayang()) {   // true = layanan melayang menyala
+            finish();                  // kembali ke aplikasi yang dipakai
+            return;
+        }
+        // tanpa izin melayang (atau tanpa izin mikrofon) → jalur lama
+        siapkanLembarActivity();
+    }
+
+    /**
+     * Coba mulai OrbLayanan. Bila izin overlay belum ada, tawarkan
+     * sekali saja (sisanya dialog jangan mengganggu tiap tahan home).
+     * @return true bila layanan berhasil dimulai.
+     */
+    private boolean cobaLayananMelayang() {
+        boolean izinMic = checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED;
+        if (!izinMic) return false;    // jalur lama menampilkan pesan mic
+
+        if (Settings.canDrawOverlays(this)) {
+            try {
+                Intent it = new Intent(this, OrbLayanan.class);
+                it.setAction(OrbLayanan.AKSI_BUKA);
+                startForegroundService(it);
+                return true;
+            } catch (Exception e) {
+                return false;          // sistem menolak start — jalur lama
+            }
+        }
+
+        if (!AviBrain.pref(this).getBoolean(PREF_TAWARAN, false)) {
+            AviBrain.pref(this).edit().putBoolean(PREF_TAWARAN, true).apply();
+            new AlertDialog.Builder(this)
+                    .setTitle("Orb melayang di atas aplikasi?")
+                    .setMessage("Beri AVI izin \u201Cmuncul di atas aplikasi "
+                            + "lain\u201D — nanti tahan tombol home akan "
+                            + "memunculkan orb & obrolan AVI DI ATAS aplikasi "
+                            + "yang sedang dipakai, tanpa pindah aplikasi.")
+                    .setPositiveButton("Beri izin", (d, w) -> {
+                        try {
+                            startActivity(new Intent(
+                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    Uri.parse("package:" + getPackageName())));
+                        } catch (Exception e) {
+                            try {
+                                startActivity(new Intent(
+                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
+                            } catch (Exception ignored) {}
+                        }
+                        finish();
+                    })
+                    .setNegativeButton("Nanti", (d, w) -> {
+                        siapkanLembarActivity();   // jalur lama kali ini
+                    })
+                    .setCancelable(false)
+                    .show();
+            return false;   // activity tetap hidup menampung dialog
+        }
+        return false;
+    }
+
+    // ============ jalur lama: lembar bawah di dalam activity ============
+
+    private void siapkanLembarActivity() {
+        if (layarSiap) return;
+        layarSiap = true;
         setContentView(R.layout.overlay_avisession);
 
         ViewGroup konten = findViewById(android.R.id.content);
@@ -93,6 +170,7 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
     @Override
     protected void onResume() {
         super.onResume();
+        if (!layarSiap) return;      // trampoline / dialog izin — tanpa mesin
         if (mesin == null) mesin = new LiveEngine(this, this);
         if (!mesinJalan) {
             mesinJalan = true;

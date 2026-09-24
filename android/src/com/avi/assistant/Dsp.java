@@ -124,7 +124,8 @@ public final class Dsp {
                 double v = (i < FRAME && awal + i < akhir) ? pcm[awal + i] / 32768.0 : 0.0;
                 double pe = v - 0.97 * sblm;   // pra-penekanan (pre-emphasis)
                 sblm = v;
-                re[i] = pe * hamming[i];
+                // jendela Hamming panjang FRAME; sisanya nol pengisi sampai FFT
+                re[i] = (i < FRAME) ? pe * hamming[i] : 0.0;
                 im[i] = 0.0;
             }
             fft(re, im);

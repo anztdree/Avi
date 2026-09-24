@@ -200,6 +200,7 @@ public class KalibrasiActivity extends Activity {
 
     private void mulaiAlur() {
         if (alurJalan) return;
+        if (alurThread != null && alurThread.isAlive()) return;   // anti ganda
         alurJalan = true;
         bUtama.setVisibility(View.GONE);   // terkunci selama alur berjalan
         bKedua.setVisibility(View.GONE);
@@ -207,17 +208,20 @@ public class KalibrasiActivity extends Activity {
         alurThread.start();
     }
 
+    /** Tidur antar percobaan; false = alur dimatikan (jangan lanjut). */
+    private boolean jeda(long ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException e) { return false; }
+        return alurJalan;
+    }
+
     private void jalankanAlur() {
         AudioRecord ar = null;
         try {
-            int minBuf = AudioRecord.getMinBufferSize(Dsp.SR,
-                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-            ar = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                    Dsp.SR, AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, Math.max(minBuf, 8192));
-            if (ar.getState() != AudioRecord.STATE_INITIALIZED) {
+            ar = GerbangSapa.bukaMikrofon();
+            if (ar == null) {
                 gagalAlur("Mikrofon tidak bisa dibuka — tutup aplikasi lain "
-                        + "yang memakai mikrofon, lalu coba lagi.");
+                        + "yang memakai mikrofon (perekam, telepon, hotword), "
+                        + "lalu tekan Mulai lagi.");
                 return;
             }
             ar.startRecording();
@@ -262,12 +266,20 @@ public class KalibrasiActivity extends Activity {
                 });
                 short[] ucap = rekamUcapan(ar, blok, lantai + 8.0, 14000, 1100);
                 if (!alurJalan) return;
-                profil = ProfilSuara.bangun(ucap, 0, ucap.length, lantai);
-                if (profil != null && profil.frameSuara >= 15) break;
-                profil = null;
-                ui.post(() -> tvInstruksi.setText("Sepertinya terlalu pelan "
-                        + "atau terpotong — sekali lagi ya, "
-                        + AviBrain.namaPemilik(this) + "."));
+                if (ucap.length == 0) {
+                    // onset tidak pernah terdengar — pesan khusus, bukan "pelan"
+                    ui.post(() -> tvInstruksi.setText("AVI belum mendengar apa "
+                            + "pun — bicara sedikit lebih dekat ke ponsel, lalu "
+                            + "baca lagi ya."));
+                } else {
+                    profil = ProfilSuara.bangun(ucap, 0, ucap.length, lantai);
+                    if (profil != null && profil.frameSuara >= 15) break;
+                    profil = null;
+                    ui.post(() -> tvInstruksi.setText("Sepertinya terpotong di "
+                            + "tengah atau terlalu pelan — sekali lagi ya, "
+                            + AviBrain.namaPemilik(this) + "."));
+                }
+                if (!jeda(1600)) return;   // beri waktu membaca pesan ulang
             }
             if (!alurJalan) return;
             if (profil == null) {
@@ -295,9 +307,11 @@ public class KalibrasiActivity extends Activity {
                 });
                 short[] ucap = rekamUcapan(ar, blok, lantai + 8.0, 3500, 750);
                 if (!alurJalan) return;
-                if (ucap.length < 1200 || Dsp.mfcc(ucap, 0, ucap.length).length < 6) {
+                if (ucap.length < 1200
+                        || Dsp.mfcc(ucap, 0, ucap.length).length < 6) {
                     ui.post(() -> tvInstruksi.setText("Tidak terdengar — ucapkan "
-                            + "sekali lagi ya."));
+                            + "sedikit lebih dekat dan lebih jelas ya."));
+                    if (!jeda(1600)) return;
                     continue;
                 }
                 take.add(ucap);
@@ -340,7 +354,11 @@ public class KalibrasiActivity extends Activity {
                 if (!isFinishing() && !isDestroyed()) tampilkanKunci();
             }, 1800);
         } catch (Throwable e) {
-            gagalAlur("Pendaftaran terganggu: " + e.getClass().getSimpleName());
+            String nama = e.getClass().getSimpleName();
+            String saran = (e instanceof OutOfMemoryError)
+                    ? "Memori ponsel penuh — tutup aplikasi lain lalu ulangi."
+                    : "Gangguan sementara (" + nama + ") — tekan Mulai lagi ya.";
+            gagalAlur(saran);
         } finally {
             if (ar != null) {
                 try { ar.stop(); } catch (Exception ignored) {}

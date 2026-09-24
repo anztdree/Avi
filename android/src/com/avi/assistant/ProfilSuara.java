@@ -33,7 +33,7 @@ public final class ProfilSuara {
     public float bicaraDb = -60f;
 
     private static final String AJI = "AVIP";
-    private static final int VERSI = 1;
+    private static final int VERSI = 2;   // v2: metrik skor gabungan (Dsp mfcc diperbaiki)
 
     public static File berkas(Context c) {
         return new File(c.getFilesDir(), "profil_suara.avi");
@@ -130,25 +130,60 @@ public final class ProfilSuara {
         return dot / Math.sqrt(na * nb);
     }
 
-    /** Kosinus + penalti ringan bila nada dasar pembicara di luar rentang. */
-    private double kosinusTertimbang(ProfilSuara u) {
-        double c = kosinusDengan(u);
-        if (u.pitchMedian > 0 && pitchMedian > 0
-                && (u.pitchMedian < pitchRendah - 50 || u.pitchMedian > pitchTinggi + 50)) {
-            c -= 0.06;
+    /** Kosinus rentang dimensi [dari, ke) — tanpa pergeseran. */
+    private double kosinusRentang(ProfilSuara u, int dari, int ke) {
+        double dot = 0, na = 0, nb = 0;
+        for (int i = dari; i < ke; i++) {
+            dot += v[i] * u.v[i]; na += v[i] * v[i]; nb += u.v[i] * u.v[i];
         }
-        return c;
+        if (na < 1e-12 || nb < 1e-12) return 0;
+        return dot / Math.sqrt(na * nb);
     }
 
-    /** Keputusan kecocokan pembicara (dipakai GerbangSapa). */
+    /** Kosinis 13 dimensi rata-MFCC yang dimidalirisasi (bisa negatif —
+     *  pembeda bentuk spektrum yang jujur, tanpa gelembung "semua positif"). */
+    private double kosinusSpektrum(ProfilSuara u) {
+        double ma = 0, mb = 0;
+        for (int i = 0; i < Dsp.NMCC; i++) { ma += v[i]; mb += u.v[i]; }
+        ma /= Dsp.NMCC; mb /= Dsp.NMCC;
+        double dot = 0, na = 0, nb = 0;
+        for (int i = 0; i < Dsp.NMCC; i++) {
+            double x = v[i] - ma, y = u.v[i] - mb;
+            dot += x * y; na += x * x; nb += y * y;
+        }
+        if (na < 1e-12 || nb < 1e-12) return 0;
+        return dot / Math.sqrt(na * nb);
+    }
+
+    /** Kemiripan nada dasar 0..1 — 1 = nada sama; 0 bila beda ≥ 2,2 oktaf.
+     *  Nada dasar adalah pembeda terkuat antar anggota keluarga (terukur). */
+    private double simNada(ProfilSuara u) {
+        if (u.pitchMedian <= 0 || pitchMedian <= 0) return 0.75;   // netral
+        double rasio = Math.abs(Math.log(u.pitchMedian / pitchMedian))
+                / Math.log(2.2);
+        return Dsp.klem01(1.0 - rasio);
+    }
+
+    /**
+     * SKOR GABUNGAN 0..1 — hasil kalibrasi uji JVM (12 pasang pembicara):
+     * pemilik 0,97-0,99 • asing 0,71-0,74. Bobot: bentuk spektrum 50%,
+     * nada dasar 35% (terkuat), dinamika bicara 15%.
+     */
+    public double skor(ProfilSuara u) {
+        return 0.50 * kosinusSpektrum(u) + 0.35 * simNada(u)
+                + 0.15 * kosinusRentang(u, Dsp.NMCC, 2 * Dsp.NMCC);
+    }
+
+    /** Keputusan kecocokan pembicara (dipakai GerbangSapa).
+     *  Ambang dari uji: pemilik ≥ 0,97 saat tenang; 0,84 memberi ruang
+     *  untuk letih/jarak mic; 0,90 untuk mode ketat. */
     public boolean cocok(ProfilSuara u, boolean ketat) {
-        return ketat ? kosinusTertimbang(u) >= 0.78
-                     : kosinusTertimbang(u) >= 0.68;
+        return skor(u) >= (ketat ? 0.90 : 0.84);
     }
 
     /** Persen kenyamanan 0..100 untuk ditampilkan ke pemilik. */
     public int persen(ProfilSuara u) {
-        return (int) Math.round(Dsp.klem01((kosinusTertimbang(u) - 0.30) / 0.60) * 100);
+        return (int) Math.round(Dsp.klem01((skor(u) - 0.50) / 0.48) * 100);
     }
 
     // ============================= biner =================================
