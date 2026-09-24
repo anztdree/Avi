@@ -3,5 +3,6 @@
      asisten digital perangkat (muncul di Pengaturan → Aplikasi default). -->
 <voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:sessionService="com.avi.assistant.AviSessionService"
+    android:recognitionService="com.avi.assistant.AviRecognitionService"
     android:supportsAssist="true"
     android:supportsLaunchVoiceAssistFromKeyguard="true"/>
