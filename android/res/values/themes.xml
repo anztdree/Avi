@@ -8,6 +8,20 @@
         <item name="android:navigationBarColor">@color/status_bar</item>
     </style>
 
+    <!-- Tema LAYAR ORBIT (activity asisten utk perangkat low-RAM):
+         translucent agar melayang di atas aplikasi sebelumnya tanpa
+         kilatan hitam; kanvas 95% milik layout sendiri; tanpa dim;
+         bar sistem menyatu dengan kanvas gelap. -->
+    <style name="TemaSesiOrbit" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:statusBarColor">@color/sesi_bar</item>
+        <item name="android:navigationBarColor">@color/sesi_bar</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
     <style name="KartuSetting">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

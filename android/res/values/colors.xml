@@ -31,6 +31,7 @@
          Tampilan overlay dipisah dari tema aplikasi supaya orb menyala
          dan wajah asisten konsisten di HP mana pun (pola Siri). ===== -->
     <color name="sesi_dasar">#F2050A14</color>
+    <color name="sesi_bar">#FF050A14</color>
     <color name="sesi_teks">#F2F7FF</color>
     <color name="sesi_samping">#8FA3C8</color>
     <color name="sesi_aksen">#5EC8F8</color>

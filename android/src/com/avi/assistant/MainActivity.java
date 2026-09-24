@@ -54,6 +54,20 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // PINTU ASISTEN LAMA: setting asisten di ponsel mungkin masih
+        // menunjuk activity ini (bekas build lama) sehingga sistem
+        // meluncurkan MainActivity saat tombol home ditahan. Serahkan
+        // lantai ke layar Orbit — jangan tampilkan layar chat.
+        String aksi = getIntent() != null ? getIntent().getAction() : null;
+        if (Intent.ACTION_ASSIST.equals(aksi)
+                || Intent.ACTION_VOICE_COMMAND.equals(aksi)) {
+            startActivity(new Intent(this, OrbitAssistActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_main);
 
         daftar     = findViewById(R.id.daftarChat);

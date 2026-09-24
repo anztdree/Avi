@@ -36,12 +36,31 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+        </activity>
+
+        <!-- LAYAR ORBIT = wajah asisten perangkat versi ACTIVITY.
+             Hasil penelusuran AOSP 12: AssistManager.startAssist()
+             meluncurkan ACTIVITY ber-intent ACTION_ASSIST bila isi
+             Settings.Secure.ASSISTANT bukan VoiceInteractionService
+             aktif; dan pada perangkat low-RAM (umum di itel/Transsion)
+             jalur VoiceInteractionService bahkan dilewati saat
+             kualifikasi (AssistantRoleBehavior) — asisten SELALU
+             dijalankan sebagai activity, persis model "Google Assistant
+             Go". Activity ini translucent, tanpa jejak Recents, dan
+             menutup sendiri saat AVI pamit. Perangkat non-low-RAM tetap
+             memakai jalur sesi overlay (AviSession) — tampilan identik. -->
+        <activity android:name=".OrbitAssistActivity"
+            android:exported="true"
+            android:theme="@style/TemaSesiOrbit"
+            android:label="@string/app_name"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="">
             <!-- Jalur kualifikasi asisten ALTERNATIF: perangkat yang
-                 ditandai low-RAM (umum di HP itel/Transsion) MELEWATI
-                 pengecekan VoiceInteractionService dan hanya menerima
-                 asisten ber-intent ASSIST (AssistantRoleBehavior,
-                 getQualifyingPackagesAsUser). Inilah pola yang dipakai
-                 Google Assistant & Dicio. -->
+                 ditandai low-RAM MELEWATI pengecekan
+                 VoiceInteractionService dan hanya menerima asisten
+                 ber-intent ASSIST. Inilah pola yang dipakai Google
+                 Assistant & Dicio. -->
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST"/>
                 <action android:name="android.intent.action.VOICE_COMMAND"/>
