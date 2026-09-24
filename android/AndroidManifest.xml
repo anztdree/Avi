@@ -71,6 +71,10 @@
         </activity>
 
         <activity android:name=".SettingsActivity" android:exported="false"/>
+
+        <!-- Kalibrasi suara pemilik: ukur kenyaringan + uji perintah nyata
+             dengan suara pemilik sendiri (hasil disimpan lokal). -->
+        <activity android:name=".KalibrasiActivity" android:exported="false"/>
         <activity android:name=".LiveActivity" android:exported="false"
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustNothing"/>

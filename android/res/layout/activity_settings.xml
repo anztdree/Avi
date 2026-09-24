@@ -16,7 +16,7 @@
             android:paddingBottom="3dp"/>
         <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Perubahan langsung berlaku — sentuh Simpan untuk memastikan. (b10)"
+            android:text="Perubahan langsung berlaku — sentuh Simpan untuk memastikan. (b11)"
             android:textColor="@color/avi_teks_samping" android:textSize="13sp"
             android:paddingBottom="14dp"/>
 
@@ -141,6 +141,28 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:textColor="@color/avi_teks_samping" android:textSize="12sp"
                 android:paddingTop="6dp"/>
+        </LinearLayout>
+
+        <!-- ===== Kalibrasi suara (permintaan pemilik: kalibrasi perintah dgn suara pemilik) ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Kalibrasi suara"/>
+            <TextView
+                android:id="@+id/tvKalibrasi"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks" android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+            <Button
+                android:id="@+id/bKalibrasi"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Mulai kalibrasi suara"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"/>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingTop="6dp"
+                android:text="Uji suara &amp; perintah dengan suara Anda sendiri: ukur kenyaringan mikrofon, uji tiga perintah nyata AVI, uji bebas — lihat persis apa yang didengar ponsel. Profil kenyaringan + skor perintah tersimpan lokal sebagai kalibrasi pemilik."/>
         </LinearLayout>
 
         <!-- ===== Mode Live ===== -->

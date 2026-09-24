@@ -24,7 +24,9 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -43,10 +45,10 @@ public class SettingsActivity extends Activity {
     private RadioButton rbH5, rbH8, rbH12, rbH15;
     private RadioButton rbIngat10, rbIngat20, rbIngat50;
     private EditText etKey, etNamaPemilik;
-    private TextView tvModel, tvPetunjukKey, tvRate, tvAsistenStatus, tvSuara;
+    private TextView tvModel, tvPetunjukKey, tvRate, tvAsistenStatus, tvSuara, tvKalibrasi;
     private Switch swTts;
     private SeekBar sbRate;
-    private Button bModel, bTes, bBersihkan, bAsisten, bSuara, bSimpan;
+    private Button bModel, bTes, bBersihkan, bAsisten, bSuara, bSimpan, bKalibrasi;
     private TextToSpeech ttsProbe;   // hanya untuk menampilkan daftar suara
 
     private boolean sedangMengisi = false;   // cegah TextWatcher menimpa nilai
@@ -93,6 +95,8 @@ public class SettingsActivity extends Activity {
         bSuara       = findViewById(R.id.bSuara);
         tvSuara      = findViewById(R.id.tvSuara);
         bSimpan      = findViewById(R.id.bSimpan);
+        tvKalibrasi  = findViewById(R.id.tvKalibrasi);
+        bKalibrasi   = findViewById(R.id.bKalibrasi);
 
         sbRate.setMax(100);                    // 50% .. 150% dipetakan dari 0..100
         muatNilai();
@@ -138,6 +142,7 @@ public class SettingsActivity extends Activity {
         else rbIngat50.setChecked(true);
 
         muatLabelSuara();
+        muatStatusKalibrasi();
 
         sedangMengisi = false;
     }
@@ -153,6 +158,24 @@ public class SettingsActivity extends Activity {
     protected void onResume() {
         super.onResume();
         muatStatusAsisten();   // segarkan bila pemilik baru saja mengubah asisten
+        muatStatusKalibrasi(); // segarkan bila pemilik baru saja selesai kalibrasi
+    }
+
+    /** Status kalibrasi suara pemilik (disimpan KalibrasiActivity). */
+    private void muatStatusKalibrasi() {
+        long w = AviBrain.pref(this).getLong("kal_waktu", 0);
+        if (w == 0) {
+            tvKalibrasi.setText("Belum dikalibrasi — disarankan sekali agar AVI "
+                    + "mengenali kenyaringan & cara bicara Anda.");
+            return;
+        }
+        float bic = AviBrain.pref(this).getFloat("kal_bicara_db", -60f);
+        int skor  = AviBrain.pref(this).getInt("kal_skor", 0);
+        String waktu = new SimpleDateFormat("dd MMM yyyy HH.mm", Locale.getDefault())
+                .format(new Date(w));
+        tvKalibrasi.setText("Terakhir " + waktu + " • kenyaringan "
+                + String.format(Locale.US, "%.0f", bic) + " dB • perintah "
+                + skor + "/3 lulus.");
     }
 
     private void petunjukKey(String prov) {
@@ -273,6 +296,10 @@ public class SettingsActivity extends Activity {
 
         // ===== pilih suara TTS =====
         bSuara.setOnClickListener(v -> dialogPilihSuara());
+
+        // ===== kalibrasi suara pemilik =====
+        bKalibrasi.setOnClickListener(v ->
+                startActivity(new Intent(this, KalibrasiActivity.class)));
 
         // ===== simpan (konfirmasi eksplisit, permintaan pemilik) =====
         bSimpan.setOnClickListener(v -> Toast.makeText(this,
