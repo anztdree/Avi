@@ -61,11 +61,30 @@ public class LiveEngine {
         void teksAvi(String teks);             // jawaban AVI (mengalir)
         void rms(float rmsdb);                 // kerasnya suara (animasi orb)
         void tetidur();                        // idle → host menutup sesi
+        /** Giliran tanya-jawab SELESAI & tersimpan di riwayat bersama —
+         *  host menggambar ulang papan pesan (aturan papan tunggal). */
+        default void giliranBeres() {}
     }
 
     private static final String ID_PAMIT = "pamit";
     private static final String TEKS_PAMIT =
             "Baik, AVI pamit dulu. Panggil AVI lagi kapan saja.";
+
+    // ==== TTS hangat lintas sesi (perbaikan kelambatan b14) ====
+ // Memuat TextToSpeech dari nol butuh 1-2 detik di HP low-RAM — dulunya
+    // SETIAP lembar dibuka membangunnya lagi. Sekarang satu instance
+    // dipegang proses: dipanaskan sejak orb muncul, dipakai bareng semua
+    // sesi, TIDAK dimatikan saat lembar ditutup (mikrofon tetap ikut siklus).
+    private static final Object KUNCI_TTS = new Object();
+    private static TextToSpeech ttsBersama;
+    private static boolean ttsBersamaSiap = false;
+
+    // ==== cache verifikasi gerbang sapa (perbaikan kelambatan b14) ====
+ // Setelah pemilik lolos "Hai AVI", gerbang TIDAK diulang di setiap
+    // lembar dibuka selama 15 menit — dulu tiap buka lembar harus
+    // verifikasi ulang (3-8 detik sebelum bisa bicara).
+    private static volatile long lolosSampaiMs = 0L;
+    private static final long USIA_VERIFIKASI_MS = 15L * 60L * 1000L;
 
     private final Context ctx;
     private final Pendengar p;
@@ -112,11 +131,12 @@ public class LiveEngine {
             p.status("Izin mikrofon belum ada — berikan lewat Pengaturan ponsel.");
             return;
         }
-        if (GerbangSapa.aktif(ctx)) {
+        if (GerbangSapa.aktif(ctx)
+                && System.currentTimeMillis() - lolosSampaiMs > USIA_VERIFIKASI_MS) {
             jalankanGerbang();
             return;
         }
-        jadwalMendengarkan(500);
+        jadwalMendengarkan(200);   // sudah terverifikasi / tanpa gerbang → cepat
     }
 
     public void hentikan() {
@@ -124,8 +144,8 @@ public class LiveEngine {
         handler.removeCallbacksAndMessages(null);
         if (gerbang != null) { gerbang.hentikan(); gerbang = null; }
         if (tts != null) {
-            try { tts.stop(); tts.shutdown(); } catch (Exception ignored) {}
-            tts = null;
+            try { tts.stop(); } catch (Exception ignored) {}   // TTS hangat:
+            tts = null;                                        // JANGAN shutdown
         }
         if (pengenal != null) {
             try { pengenal.destroy(); } catch (Exception ignored) {}
@@ -143,28 +163,81 @@ public class LiveEngine {
     // ============================ TTS (bicara) ============================
 
     private void siapkanTts() {
-        tts = new TextToSpeech(ctx, ok -> {
-            if (!hidup) return;
-            ttsSiap = ok == TextToSpeech.SUCCESS;
-            if (!ttsSiap) return;
-            try { tts.setLanguage(new Locale("id", "ID")); } catch (Exception ignored) {}
-            // suara pilihan pemilik (Pengaturan → Suara → Pilih suara TTS)
-            try {
-                String namaSuara = AviBrain.pref(ctx).getString("tts_suara", "");
-                if (!namaSuara.isEmpty() && tts.getVoices() != null) {
-                    for (Voice v : tts.getVoices()) {
-                        if (namaSuara.equals(v.getName())) { tts.setVoice(v); break; }
+        synchronized (KUNCI_TTS) {
+            if (ttsBersama != null) {
+                // reuse TTS hangat — tinggal pasang suara & pendengar giliran ini
+                tts = ttsBersama;
+                ttsSiap = ttsBersamaSiap;
+                aturSuaraTts();
+                if (!ttsSiap) tungguTtsHangat(0);
+                return;
+            }
+            tts = new TextToSpeech(ctx, ok -> {
+                boolean siap = ok == TextToSpeech.SUCCESS;
+                synchronized (KUNCI_TTS) {
+                    // simpan untuk SEMUA sesi berikutnya (tidak di-shutdown)
+                    ttsBersama = tts;
+                    ttsBersamaSiap = siap;
+                }
+                if (!siap) return;
+                if (hidup) aturSuaraTts();
+            });
+        }
+    }
+
+    /** TTS hangat masih init — tunggu sampai siap lalu pasang suara sesi ini. */
+    private void tungguTtsHangat(final int putaran) {
+        if (putaran > 12) return;   // >9,6 dtk: anggap TTS gagal — mode teks saja
+        handler.postDelayed(() -> {
+            if (!hidup || tts == null || tts != ttsBersama) return;
+            if (ttsBersamaSiap) {
+                ttsSiap = true;
+                aturSuaraTts();
+            } else {
+                tungguTtsHangat(putaran + 1);
+            }
+        }, 800);
+    }
+
+    /** Terapkan bahasa/suara/laju + pendengar giliran milik mesin INI. */
+    private void aturSuaraTts() {
+        if (tts == null) return;
+        try { tts.setLanguage(new Locale("id", "ID")); } catch (Exception ignored) {}
+        try {
+            String namaSuara = AviBrain.pref(ctx).getString("tts_suara", "");
+            if (!namaSuara.isEmpty() && tts.getVoices() != null) {
+                for (Voice v : tts.getVoices()) {
+                    if (namaSuara.equals(v.getName())) { tts.setVoice(v); break; }
+                }
+            }
+        } catch (Exception ignored) {}
+        try { tts.setSpeechRate(AviBrain.pref(ctx).getInt("tts_rate", 100) / 100f); }
+        catch (Exception ignored) {}
+        tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+            @Override public void onStart(String id) {}
+            @Override public void onDone(String id) { ucapBeres(id); }
+            @Override public void onError(String id) { ucapBeres(id); }
+            @Override public void onError(String id, int kode) { ucapBeres(id); }
+        });
+    }
+
+    /** Dipanggil OrbLayanan saat orb muncul — bangun TTS lebih awal
+     *  supaya ketuk gelembung tidak menunggu inisialisasi mesin suara. */
+    public static void panaskanTts(Context context) {
+        synchronized (KUNCI_TTS) {
+            if (ttsBersama != null) return;
+            Context app = context.getApplicationContext();
+            final TextToSpeech[] wadah = new TextToSpeech[1];
+            wadah[0] = new TextToSpeech(app, ok -> {
+                synchronized (KUNCI_TTS) {
+                    if (ttsBersama == wadah[0]) {
+                        ttsBersamaSiap = ok == TextToSpeech.SUCCESS;
                     }
                 }
-            } catch (Exception ignored) {}
-            tts.setSpeechRate(AviBrain.pref(ctx).getInt("tts_rate", 100) / 100f);
-            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String id) {}
-                @Override public void onDone(String id) { ucapBeres(id); }
-                @Override public void onError(String id) { ucapBeres(id); }
-                @Override public void onError(String id, int kode) { ucapBeres(id); }
             });
-        });
+            ttsBersama = wadah[0];
+            ttsBersamaSiap = false;
+        }
     }
 
     private void ucapkan(String potongan) {
@@ -208,10 +281,12 @@ public class LiveEngine {
     }
 
     /** Lanjut mendengarkan bila sebelumnya dijeda (orb disentuh saat SIAP).
-     *  Sentuhan pemilik di tengah gerbang = pintu langsung dibuka. */
+     *  Sentuhan pemilik di tengah gerbang = pintu langsung dibuka (dan
+     *  dihitung sebagai verifikasi — pemilik jelas ada di depan layar). */
     public void dengarkanLagi() {
         if (!hidup || sudahTidur || keadaan != OrbView.SIAP) return;
         if (gerbang != null) { gerbang.hentikan(); gerbang = null; }
+        lolosSampaiMs = System.currentTimeMillis();
         mulaiMendengarkan();
     }
 
@@ -233,6 +308,7 @@ public class LiveEngine {
                 if (!hidup || sudahTidur) { gerbang = null; return; }
                 gerbang = null;
                 if (lolos) {
+                    lolosSampaiMs = System.currentTimeMillis();   // cache 15 menit
                     p.status("Dikenali, " + AviBrain.namaPemilik(ctx)
                             + " ✓ (" + persen + "%) — silakan bicara.");
                     jadwalMendengarkan(250);
@@ -323,6 +399,7 @@ public class LiveEngine {
 
         if (!ttsSiap) {                 // tanpa mesin TTS: lanjut langsung
             jadwalMendengarkan(250);
+            p.giliranBeres();           // pasangan sudah masuk papan bersama
             return;
         }
         String sisa = aliran.length() > sudahDiucap
@@ -334,6 +411,7 @@ public class LiveEngine {
         } else {
             ucapkan(sisa);             // onDone-nya akan memicu lanjut dengar
         }
+        p.giliranBeres();              // riwayat bersama diperbarui → gambar ulang
     }
 
     /** Cari akhir kalimat setelah minimal 40 karakter dari posisi 'dari'. */

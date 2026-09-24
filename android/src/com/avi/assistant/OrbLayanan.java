@@ -21,6 +21,8 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -67,6 +69,10 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
     private WindowManager.LayoutParams lpLembar;
     private OrbView orbLembar, orbKecil;
     private TextView tvStatus, tvAnda, tvAvi;
+    private ScrollView gulirPapan;              // papan pesan bersama
+    private LinearLayout papanPesan;
+    private View pemisahPapan;                  // garis antara riwayat & giliran hidup
+    private boolean pemisahTerpasang;
 
     private LiveEngine mesin;
     private boolean mesinHidup = false;
@@ -79,6 +85,9 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         inflater = LayoutInflater.from(this);
         LAYANAN_HIDUP = true;
+        // panaskan TTS sejak orb muncul — ketuk gelembung tidak perlu
+        // menunggu mesin suara bangun lagi (balasan terasa lebih cepat)
+        LiveEngine.panaskanTts(getApplicationContext());
     }
 
     @Override
@@ -251,7 +260,13 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
         tvStatus = lembar.findViewById(R.id.tvStatusSesi);
         tvAnda   = lembar.findViewById(R.id.tvAndaSesi);
         tvAvi    = lembar.findViewById(R.id.tvAviSesi);
+        gulirPapan = lembar.findViewById(R.id.gulirPapan);
+        papanPesan  = lembar.findViewById(R.id.papanPesan);
         orbLembar.setWarnaOrb(0xFF38BDF8);
+
+        // SATU PAPAN PESAN: riwayat yang sama persis dengan aplikasi AVI
+        PapanPesan.render(this, papanPesan, gulirPapan, true);
+        pemisahTerpasang = false;
 
         lembar.findViewById(R.id.btnTutupSesi).setOnClickListener(v -> tutupLembar());
         orbLembar.setOnClickListener(v -> {
@@ -296,6 +311,7 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
         hentikanMesin();
         lepasView(lembar); lembar = null;
         orbLembar = null; tvStatus = null; tvAnda = null; tvAvi = null;
+        gulirPapan = null; papanPesan = null; pemisahPapan = null;
         pasangOrb();
     }
 
@@ -356,6 +372,14 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
             tvAnda.setVisibility(View.GONE);
             return;
         }
+        // garis halus pemisah riwayat lama vs giliran yang sedang hidup
+        if (!pemisahTerpasang && papanPesan != null) {
+            pemisahPapan = PapanPesan.pemisahHidup(this, true);
+            papanPesan.addView(pemisahPapan);
+            pemisahTerpasang = true;
+            if (gulirPapan != null) gulirPapan.post(() ->
+                    gulirPapan.fullScroll(View.FOCUS_DOWN));
+        }
         tvAnda.setVisibility(View.VISIBLE);
         tvAnda.setText(teks);
     }
@@ -368,6 +392,23 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
         }
         tvAvi.setVisibility(View.VISIBLE);
         tvAvi.setText(teks);
+    }
+
+    /** Giliran selesai — pasangan pertanyaan+jawaban sudah tersimpan ke
+     *  riwayat bersama oleh AviBrain.tanyaStream → papan digambar ulang
+     *  supaya pesan baru menyatu dengan riwayat aplikasi. */
+    @Override public void giliranBeres() {
+        if (papanPesan != null) {
+            PapanPesan.render(this, papanPesan, gulirPapan, true);
+        }
+        if (pemisahPapan != null && papanPesan != null) {
+            papanPesan.removeView(pemisahPapan);   // pemisah baru nanti dipasang lagi
+        }
+        pemisahTerpasang = false;
+        pemisahPapan = null;
+        // giliran sudah masuk papan — baris hidup tidak perlu dobel
+        if (tvAnda != null) tvAnda.setVisibility(View.GONE);
+        if (tvAvi != null) tvAvi.setVisibility(View.GONE);
     }
 
     @Override public void rms(float rmsdb) {

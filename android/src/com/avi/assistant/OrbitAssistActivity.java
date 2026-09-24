@@ -13,6 +13,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
@@ -48,6 +50,8 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
     private View akar, lembar;
     private OrbView orb;
     private TextView tvStatus, tvAnda, tvAvi;
+    private ScrollView gulirPapan;              // papan pesan bersama
+    private LinearLayout papanPesan;
     private LiveEngine mesin;
     private boolean mesinJalan;
     private boolean layarSiap = false;
@@ -82,7 +86,10 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
         if (Settings.canDrawOverlays(this)) {
             try {
                 Intent it = new Intent(this, OrbLayanan.class);
-                it.setAction(OrbLayanan.AKSI_BUKA);
+                // ATURAN PEMILIK (b14): tahan tombol home yang muncul CUMA
+                // gelembung orb kecil — JANGAN langsung buka lembar. Ketuk
+                // gelembungnya baru papan pesan muncul.
+                it.setAction(OrbLayanan.AKSI_ORB);
                 startForegroundService(it);
                 return true;
             } catch (Exception e) {
@@ -135,8 +142,12 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
         tvStatus = akar.findViewById(R.id.tvStatusSesi);
         tvAnda = akar.findViewById(R.id.tvAndaSesi);
         tvAvi = akar.findViewById(R.id.tvAviSesi);
+        gulirPapan = akar.findViewById(R.id.gulirPapan);
+        papanPesan  = akar.findViewById(R.id.papanPesan);
         // sesi selalu gelap → orb sian elektrik (bukan warna tema)
         orb.setWarnaOrb(0xFF38BDF8);
+        // SATU PAPAN PESAN: riwayat yang sama persis dengan aplikasi AVI
+        PapanPesan.render(this, papanPesan, gulirPapan, true);
 
         // sentuh luar lembar (area transparan) = tutup; klik di dalam
         // lembar ditelan lembar sendiri (clickable=true di XML)
@@ -227,6 +238,16 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
         }
         tvAvi.setVisibility(View.VISIBLE);
         tvAvi.setText(teks);
+    }
+
+    /** Giliran selesai — pasangan sudah masuk riwayat bersama → papan
+     *  digambar ulang supaya menyatu dengan aplikasi AVI. */
+    @Override public void giliranBeres() {
+        if (papanPesan != null) {
+            PapanPesan.render(this, papanPesan, gulirPapan, true);
+        }
+        if (tvAnda != null) tvAnda.setVisibility(View.GONE);
+        if (tvAvi != null) tvAvi.setVisibility(View.GONE);
     }
 
     @Override public void rms(float rmsdb) {

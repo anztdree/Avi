@@ -1,7 +1,6 @@
 package com.avi.assistant;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -84,7 +83,9 @@ public class MainActivity extends Activity {
         // orb hero ikut warna aksen tema (biru pekat saat cerah, sian saat gelap)
         ((OrbView) findViewById(R.id.orbHero)).setWarnaOrb(AviBrain.warnaAksen(this));
 
-        findViewById(R.id.btnBaru).setOnClickListener(v -> konfirmasiBaru());
+        // ATURAN PEMILIK: TIDAK ADA tombol "Percakapan baru" — tahan home,
+        // Mode Live, dan chat di aplikasi ini adalah SATU papan pesan yang
+        // sama yang mengalir terus (AviBrain.riwayat).
         findViewById(R.id.btnPengaturan).setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class)));
 
@@ -239,20 +240,6 @@ public class MainActivity extends Activity {
                 }
             }
         });
-    }
-
-    private void konfirmasiBaru() {
-        new AlertDialog.Builder(this)
-                .setTitle("Percakapan baru")
-                .setMessage("Riwayat chat dibersihkan dan mulai dari awal?")
-                .setPositiveButton("Ya, mulai baru", (d, w) -> {
-                    AviBrain.kosongkanRiwayat(this);
-                    posisiAnimasi = Integer.MAX_VALUE;
-                    muatIsi();
-                    Toast.makeText(this, "Percakapan baru dimulai.", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Batal", null)
-                .show();
     }
 
     // ============================ adapter gelembung ============================

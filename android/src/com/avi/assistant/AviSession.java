@@ -12,6 +12,8 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
@@ -32,6 +34,8 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
     private View akar, lembar;
     private OrbView orb;
     private TextView tvStatus, tvAnda, tvAvi;
+    private ScrollView gulirPapan;              // papan pesan bersama
+    private LinearLayout papanPesan;
     private LiveEngine mesin;
 
     public AviSession(Context context) {
@@ -46,8 +50,12 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
         tvStatus = akar.findViewById(R.id.tvStatusSesi);
         tvAnda = akar.findViewById(R.id.tvAndaSesi);
         tvAvi = akar.findViewById(R.id.tvAviSesi);
+        gulirPapan = akar.findViewById(R.id.gulirPapan);
+        papanPesan  = akar.findViewById(R.id.papanPesan);
         // sesi selalu gelap → orb sian elektrik (bukan warna tema)
         orb.setWarnaOrb(0xFF38BDF8);
+        // SATU PAPAN PESAN: riwayat yang sama persis dengan aplikasi AVI
+        PapanPesan.render(getContext(), papanPesan, gulirPapan, true);
 
         // sentuh luar lembar (area transparan) = tutup sesi; klik di
         // dalam lembar ditelan lembar sendiri (clickable=true di XML)
@@ -98,6 +106,9 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
         }
 
         if (mesin == null) mesin = new LiveEngine(getContext(), this);
+        // riwayat bisa saja baru bertambah dari aplikasi / lembar melayang —
+        // papan pesan bersama digambar ulang tiap sesi dipanggil
+        PapanPesan.render(getContext(), papanPesan, gulirPapan, true);
         if (mesin.izinMicAda()) {
             mesin.mulai();
         } else {
@@ -148,6 +159,16 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
         }
         tvAvi.setVisibility(View.VISIBLE);
         tvAvi.setText(teks);
+    }
+
+    /** Giliran selesai — pasangan sudah masuk riwayat bersama → papan
+     *  digambar ulang supaya menyatu dengan aplikasi AVI. */
+    @Override public void giliranBeres() {
+        if (papanPesan != null) {
+            PapanPesan.render(getContext(), papanPesan, gulirPapan, true);
+        }
+        if (tvAnda != null) tvAnda.setVisibility(View.GONE);
+        if (tvAvi != null) tvAvi.setVisibility(View.GONE);
     }
 
     @Override public void rms(float rmsdb) {

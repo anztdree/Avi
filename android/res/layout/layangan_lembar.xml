@@ -67,13 +67,30 @@
         </FrameLayout>
     </LinearLayout>
 
+    <!-- PAPAN PESAN BERSAMA — riwayat yang SAMA dengan aplikasi AVI
+         (aturan pemilik: tahan home & aplikasi AVI = satu papan pesan).
+         Digambar ulang PapanPesan tiap lembar dibuka / giliran selesai. -->
+    <ScrollView
+        android:id="@+id/gulirPapan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/papanPesan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </ScrollView>
+
     <!-- orb: wajah asisten -->
     <com.avi.assistant.OrbView
         android:id="@+id/orbSesi"
-        android:layout_width="104dp"
-        android:layout_height="104dp"
+        android:layout_width="92dp"
+        android:layout_height="92dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="4dp"/>
+        android:layout_marginTop="8dp"/>
 
     <!-- status mesin -->
     <TextView

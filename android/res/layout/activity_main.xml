@@ -46,14 +46,6 @@
             android:layout_weight="1"/>
 
         <ImageView
-            android:id="@+id/btnBaru"
-            android:layout_width="40dp" android:layout_height="40dp"
-            android:background="@drawable/lingkaran_ikon"
-            android:src="@drawable/ic_baru"
-            android:padding="10dp"
-            android:contentDescription="Percakapan baru"/>
-
-        <ImageView
             android:id="@+id/btnPengaturan"
             android:layout_width="40dp" android:layout_height="40dp"
             android:layout_marginLeft="10dp"

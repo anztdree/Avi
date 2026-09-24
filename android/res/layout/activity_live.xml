@@ -63,6 +63,14 @@
             android:paddingLeft="22dp" android:paddingRight="22dp"
             android:paddingBottom="16dp">
 
+            <!-- PAPAN PESAN BERSAMA — riwayat lama yang sama dengan
+                 aplikasi AVI & lembar melayang (aturan pemilik). -->
+            <LinearLayout
+                android:id="@+id/papanLive"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="10dp"/>
+
             <TextView
                 android:id="@+id/tvAndaLive"
                 android:layout_width="match_parent" android:layout_height="wrap_content"

@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -23,6 +24,7 @@ public class LiveActivity extends Activity implements LiveEngine.Pendengar {
     private OrbView orb;
     private TextView tvStatus, tvAnda, tvAvi;
     private ScrollView scrollTranskrip;
+    private LinearLayout papanLive;             // papan pesan bersama
     private LiveEngine mesin;
 
     @Override
@@ -41,7 +43,10 @@ public class LiveActivity extends Activity implements LiveEngine.Pendengar {
         tvAnda = findViewById(R.id.tvAndaLive);
         tvAvi = findViewById(R.id.tvAviLive);
         scrollTranskrip = findViewById(R.id.scrollTranskrip);
+        papanLive = findViewById(R.id.papanLive);
         orb.setWarnaOrb(AviBrain.warnaAksen(this));
+        // SATU PAPAN PESAN: riwayat yang sama dengan lembar melayang & chat
+        PapanPesan.render(this, papanLive, scrollTranskrip, false);
 
         findViewById(R.id.btnTutupLive).setOnClickListener(v -> finish());
         orb.setOnClickListener(v -> {
@@ -90,6 +95,15 @@ public class LiveActivity extends Activity implements LiveEngine.Pendengar {
 
     @Override public void teksAvi(String teks) {
         tvAvi.setText(teks);
+        scrollKeBawah();
+    }
+
+    /** Giliran selesai — pasangan sudah masuk riwayat bersama → papan
+     *  digambar ulang supaya menyatu dengan aplikasi AVI. */
+    @Override public void giliranBeres() {
+        PapanPesan.render(this, papanLive, scrollTranskrip, false);
+        tvAnda.setVisibility(View.GONE);
+        tvAvi.setVisibility(View.GONE);
         scrollKeBawah();
     }
 
