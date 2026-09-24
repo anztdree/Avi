@@ -12,8 +12,13 @@
         <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Pengaturan" android:textColor="@color/avi_teks"
-            android:textSize="22sp" android:textStyle="bold"
-            android:paddingBottom="12dp"/>
+            android:textSize="24sp" android:textStyle="bold"
+            android:paddingBottom="2dp"/>
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Perubahan langsung berlaku — sentuh Simpan untuk memastikan."
+            android:textColor="@color/avi_teks_samping" android:textSize="13sp"
+            android:paddingBottom="14dp"/>
 
         <!-- ===== Penyedia AI ===== -->
         <LinearLayout style="@style/KartuSetting">
@@ -69,8 +74,8 @@
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Tes koneksi"
             android:textAllCaps="false"
-            android:background="@drawable/btn_primary"
-            android:textColor="#FFFFFF"
+            android:background="@drawable/btn_secondary"
+            android:textColor="@color/avi_teks"
             android:layout_marginBottom="12dp"/>
 
         <!-- ===== Nama pemilik ===== -->
@@ -137,6 +142,63 @@
                 android:id="@+id/sbRate"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:max="100"/>
+            <Button
+                android:id="@+id/bSuara"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Pilih suara TTS"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_secondary"
+                android:textColor="@color/avi_teks"/>
+            <TextView
+                android:id="@+id/tvSuara"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingTop="6dp"/>
+        </LinearLayout>
+
+        <!-- ===== Mode Live ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Mode Live"/>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingBottom="4dp"
+                android:text="Berapa lama obrolan boleh hening sebelum AVI pamit dan tidur."/>
+            <RadioGroup
+                android:id="@+id/rgHening"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/rbH5" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="5 dtk"/>
+                <RadioButton android:id="@+id/rbH8" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="8 dtk"/>
+                <RadioButton android:id="@+id/rbH12" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="12 dtk"/>
+                <RadioButton android:id="@+id/rbH15" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="15 dtk"/>
+            </RadioGroup>
+        </LinearLayout>
+
+        <!-- ===== Daya ingat AI ===== -->
+        <LinearLayout style="@style/KartuSetting">
+            <TextView style="@style/JudulKartu" android:text="Daya ingat AI"/>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/avi_teks_samping" android:textSize="12sp"
+                android:paddingBottom="4dp"
+                android:text="Berapa pesan terakhir yang ikut jadi konteks jawaban. Semakin besar, semakin paham — tapi lebih boros kuota API."/>
+            <RadioGroup
+                android:id="@+id/rgIngat"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/rbIngat10" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="10"/>
+                <RadioButton android:id="@+id/rbIngat20" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="20"/>
+                <RadioButton android:id="@+id/rbIngat50" style="@style/PilihanSetting"
+                    android:layout_weight="1" android:text="50"/>
+            </RadioGroup>
         </LinearLayout>
 
         <!-- ===== Asisten perangkat ===== -->
@@ -158,14 +220,26 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:textColor="@color/avi_teks_samping" android:textSize="12sp"
                 android:paddingTop="6dp"
-                android:text="Setelah AVI terpilih, tahan tombol home di layar mana pun (navigasi gestur: sapu dari sudut kiri/kanan bawah) — kartu obrolan transparan AVI muncul di atas aplikasi, seperti Google Assistant. Pemicu dipegang sistem Android: tidak ada layanan latar, baterai tetap aman."/>
+                android:text="Setelah AVI terpilih, tahan tombol home di layar mana pun (navigasi gestur: sapu dari sudut kiri/kanan bawah) — kartu obrolan transparan AVI muncul di atas aplikasi, seperti Google Assistant. Pemicu dipegang sistem Android: tidak ada layanan latar, baterai tetap aman. Jika AVI belum muncul dalam daftarnya, reboot HP lalu buka lagi."/>
         </LinearLayout>
+
+        <Button
+            android:id="@+id/bSimpan"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Simpan pengaturan"
+            android:textAllCaps="false"
+            android:textSize="15sp"
+            android:background="@drawable/btn_primary"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="10dp"/>
 
         <Button
             android:id="@+id/bBersihkan"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Bersihkan riwayat chat"
             android:textAllCaps="false"
+            android:background="@drawable/btn_secondary"
+            android:textColor="@color/avi_teks"
             android:layout_marginBottom="12dp"/>
 
         <TextView

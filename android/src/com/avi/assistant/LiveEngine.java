@@ -12,6 +12,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.speech.tts.Voice;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -69,6 +70,7 @@ public class LiveEngine {
     private boolean sudahTidur = false;
     private boolean punyaPercakapan = false;
     private int salahDengar = 0;
+    private int hitungHening = 0;         // berapa laporan hening berturut-turut
     private int keadaan = OrbView.SIAP;
 
     // sinkronisasi loop: dua jalur harus beres (stream AI + antrean TTS)
@@ -132,6 +134,15 @@ public class LiveEngine {
             ttsSiap = ok == TextToSpeech.SUCCESS;
             if (!ttsSiap) return;
             try { tts.setLanguage(new Locale("id", "ID")); } catch (Exception ignored) {}
+            // suara pilihan pemilik (Pengaturan → Suara → Pilih suara TTS)
+            try {
+                String namaSuara = AviBrain.pref(ctx).getString("tts_suara", "");
+                if (!namaSuara.isEmpty() && tts.getVoices() != null) {
+                    for (Voice v : tts.getVoices()) {
+                        if (namaSuara.equals(v.getName())) { tts.setVoice(v); break; }
+                    }
+                }
+            } catch (Exception ignored) {}
             tts.setSpeechRate(AviBrain.pref(ctx).getInt("tts_rate", 100) / 100f);
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String id) {}
@@ -309,6 +320,7 @@ public class LiveEngine {
                         ? "" : daftar.get(0).trim();
                 if (teks.isEmpty()) { jadwalMendengarkan(150); return; }
                 p.transkripAnda(teks);
+                hitungHening = 0;          // ada suara — penghitung hening direset
                 ajukanKeAi(teks);
             }
 
@@ -316,7 +328,16 @@ public class LiveEngine {
                 if (!hidup || sudahTidur) return;
                 if (error == SpeechRecognizer.ERROR_NO_MATCH
                         || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                    // IDLE — pola Siri/GA: beberapa detik tanpa aktivitas, tidur
+                    // IDLE — pola Siri/GA: beberapa detik tanpa aktivitas, tidur.
+                    // Durasi dipilih pemilik (Pengaturan → Mode Live); pengenal
+                    // Android melaporkan hening tiap ±5 detik → dihitung per putaran.
+                    int dtk = AviBrain.pref(ctx).getInt("live_hening", 8);
+                    int putaran = Math.max(1, (dtk + 4) / 5);
+                    if (++hitungHening < putaran) {
+                        jadwalMendengarkan(150);   // masih dalam toleransi — dengar lagi
+                        return;
+                    }
+                    hitungHening = 0;
                     if (!punyaPercakapan) { tidurSekarang(); return; }
                     mulaiPamit();
                     return;

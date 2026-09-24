@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.Voice;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.ViewGroup;
@@ -24,23 +26,29 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Pengaturan AVI: penyedia AI + API key, pilih model (fetch dari penyedia),
- * nama pemilik (teks bebas), tema cerah/gelap, warna aksen, TTS,
- * asisten perangkat, bersihkan riwayat.
- * Semua perubahan tersimpan seketika — tidak perlu tombol simpan.
+ * nama pemilik (teks bebas), tema cerah/gelap, warna aksen, TTS (suara +
+ * kecepatan), durasi hening Mode Live, daya ingat AI, asisten perangkat,
+ * bersihkan riwayat.
+ * Semua perubahan tersimpan seketika; tombol Simpan memberi konfirmasi
+ * eksplisit (permintaan pemilik).
  */
 public class SettingsActivity extends Activity {
 
-    private RadioGroup rgPenyedia, rgTema, rgAksen;
+    private RadioGroup rgPenyedia, rgTema, rgAksen, rgHening, rgIngat;
     private RadioButton rbGemini, rbNvidia, rbOpenrouter, rbCerah, rbGelap;
     private RadioButton rbABiru, rbAHijau, rbAUngu, rbAOranye;
+    private RadioButton rbH5, rbH8, rbH12, rbH15;
+    private RadioButton rbIngat10, rbIngat20, rbIngat50;
     private EditText etKey, etNamaPemilik;
-    private TextView tvModel, tvPetunjukKey, tvRate, tvAsistenStatus;
+    private TextView tvModel, tvPetunjukKey, tvRate, tvAsistenStatus, tvSuara;
     private Switch swTts;
     private SeekBar sbRate;
-    private Button bModel, bTes, bBersihkan, bAsisten;
+    private Button bModel, bTes, bBersihkan, bAsisten, bSuara, bSimpan;
+    private TextToSpeech ttsProbe;   // hanya untuk menampilkan daftar suara
 
     private boolean sedangMengisi = false;   // cegah TextWatcher menimpa nilai
     private boolean sedangUji = false;
@@ -79,6 +87,18 @@ public class SettingsActivity extends Activity {
         rbAOranye    = findViewById(R.id.rbAOranye);
         tvAsistenStatus = findViewById(R.id.tvAsistenStatus);
         bAsisten     = findViewById(R.id.bAsisten);
+        rgHening     = findViewById(R.id.rgHening);
+        rbH5         = findViewById(R.id.rbH5);
+        rbH8         = findViewById(R.id.rbH8);
+        rbH12        = findViewById(R.id.rbH12);
+        rbH15        = findViewById(R.id.rbH15);
+        rgIngat      = findViewById(R.id.rgIngat);
+        rbIngat10    = findViewById(R.id.rbIngat10);
+        rbIngat20    = findViewById(R.id.rbIngat20);
+        rbIngat50    = findViewById(R.id.rbIngat50);
+        bSuara       = findViewById(R.id.bSuara);
+        tvSuara      = findViewById(R.id.tvSuara);
+        bSimpan      = findViewById(R.id.bSimpan);
 
         sbRate.setMax(100);                    // 50% .. 150% dipetakan dari 0..100
         muatNilai();
@@ -120,7 +140,27 @@ public class SettingsActivity extends Activity {
             default:       rbABiru.setChecked(true);
         }
 
+        int hening = AviBrain.pref(this).getInt("live_hening", 8);
+        if (hening <= 5) rbH5.setChecked(true);
+        else if (hening <= 8) rbH8.setChecked(true);
+        else if (hening <= 12) rbH12.setChecked(true);
+        else rbH15.setChecked(true);
+
+        int ingat = AviBrain.pref(this).getInt("daya_ingat", 20);
+        if (ingat <= 10) rbIngat10.setChecked(true);
+        else if (ingat <= 20) rbIngat20.setChecked(true);
+        else rbIngat50.setChecked(true);
+
+        muatLabelSuara();
+
         sedangMengisi = false;
+    }
+
+    private void muatLabelSuara() {
+        String suara = AviBrain.pref(this).getString("tts_suara", "");
+        tvSuara.setText(suara.isEmpty()
+                ? "Suara: bawaan mesin TTS"
+                : "Suara aktif: " + suara);
     }
 
     @Override
@@ -237,6 +277,28 @@ public class SettingsActivity extends Activity {
 
         // ===== Asisten perangkat (tahan tombol home ala Google Assistant) =====
         bAsisten.setOnClickListener(v -> bukaPengaturanAsisten());
+
+        // ===== durasi hening Mode Live =====
+        rgHening.setOnCheckedChangeListener((grup, id) -> {
+            if (sedangMengisi) return;
+            int dtk = id == R.id.rbH5 ? 5 : id == R.id.rbH12 ? 12
+                    : id == R.id.rbH15 ? 15 : 8;
+            AviBrain.pref(this).edit().putInt("live_hening", dtk).apply();
+        });
+
+        // ===== daya ingat AI =====
+        rgIngat.setOnCheckedChangeListener((grup, id) -> {
+            if (sedangMengisi) return;
+            int n = id == R.id.rbIngat10 ? 10 : id == R.id.rbIngat50 ? 50 : 20;
+            AviBrain.pref(this).edit().putInt("daya_ingat", n).apply();
+        });
+
+        // ===== pilih suara TTS =====
+        bSuara.setOnClickListener(v -> dialogPilihSuara());
+
+        // ===== simpan (konfirmasi eksplisit, permintaan pemilik) =====
+        bSimpan.setOnClickListener(v -> Toast.makeText(this,
+                "Pengaturan tersimpan ✓", Toast.LENGTH_SHORT).show());
     }
 
     // ================= asisten perangkat =================
@@ -264,6 +326,86 @@ public class SettingsActivity extends Activity {
             try { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
             catch (Exception ignored) {}
         }
+    }
+
+    // ================= dialog pilih suara TTS =================
+
+    private void dialogPilihSuara() {
+        if (ttsProbe != null) return;   // sedang menyiapkan
+        final AlertDialog[] kotakTunggu = new AlertDialog[1];
+        ttsProbe = new TextToSpeech(this, ok -> {
+            java.util.Set<Voice> daftarSuara =
+                    (ok == TextToSpeech.SUCCESS && ttsProbe != null)
+                    ? ttsProbe.getVoices() : null;
+            final List<Voice> suara = new ArrayList<>();
+            if (daftarSuara != null) {
+                // suara Indonesia dulu, lalu sisanya alfabetis
+                List<Voice> id = new ArrayList<>(), lain = new ArrayList<>();
+                for (Voice v : daftarSuara) {
+                    (v.getLocale() != null
+                            && v.getLocale().getLanguage().startsWith("id")
+                            ? id : lain).add(v);
+                }
+                id.sort((a, b) -> a.getName().compareTo(b.getName()));
+                lain.sort((a, b) -> a.getName().compareTo(b.getName()));
+                suara.addAll(id);
+                suara.addAll(lain);
+            }
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) { matikanProbe(); return; }
+                kotakTunggu[0].dismiss();
+                tampilkanDaftarSuara(suara);
+                matikanProbe();
+            });
+        });
+
+        kotakTunggu[0] = new AlertDialog.Builder(this)
+                .setTitle("Pilih suara TTS")
+                .setMessage("Membaca suara yang tersedia di mesin TTS ponsel…")
+                .setNegativeButton("Batal", (d, w) -> { matikanProbe(); })
+                .create();
+        kotakTunggu[0].show();
+    }
+
+    private void tampilkanDaftarSuara(final List<Voice> suara) {
+        if (suara.isEmpty()) {
+            Toast.makeText(this, "Mesin TTS ponsel ini tidak membuka daftar suara — "
+                    + "AVI memakai suara bawaan.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        final List<String> label = new ArrayList<>();
+        for (Voice v : suara) {
+            label.add(v.getName() + "   (" + v.getLocale() + ")");
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Pilih suara TTS")
+                .setItems(label.toArray(new String[0]), (d, pos) -> {
+                    Voice v = suara.get(pos);
+                    AviBrain.pref(this).edit()
+                            .putString("tts_suara", v.getName()).apply();
+                    muatLabelSuara();
+                    Toast.makeText(this, "Suara dipasang: " + v.getName(),
+                            Toast.LENGTH_SHORT).show();
+                })
+                .setNeutralButton("Kembali ke suara bawaan", (d, w) -> {
+                    AviBrain.pref(this).edit().remove("tts_suara").apply();
+                    muatLabelSuara();
+                })
+                .setNegativeButton("Tutup", null)
+                .show();
+    }
+
+    private void matikanProbe() {
+        if (ttsProbe != null) {
+            try { ttsProbe.shutdown(); } catch (Exception ignored) {}
+            ttsProbe = null;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        matikanProbe();
+        super.onDestroy();
     }
 
     // ================= dialog pilih model =================

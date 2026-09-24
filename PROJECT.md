@@ -10,3 +10,7 @@ tanpa Gradle, package `com.avi.assistant`, minSdk 24).
    penuh, seluruh source & keystore dibangun ulang; sejak itu source juga
    di-commit ke git agar selamat dari reset.
 4. **Tanpa AskUserQuestion** — diskusi lewat percakapan natural.
+5. **AVI tidak multi-tasking** — DILARANG fitur multi-chat / banyak sesi
+   obrolan paralel. Satu obrolan, tugas dikerjakan satu per satu sampai
+   selesai (pola asisten pribadi seperti Siri/Google Assistant, bukan pola
+   aplikasi chat). Keputusan pemilik, 2026-09-24.

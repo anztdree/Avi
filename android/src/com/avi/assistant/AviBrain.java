@@ -47,7 +47,6 @@ public final class AviBrain {
     public interface DaftarModel { void selesai(List<String> model, String galat); }
 
     private static final Handler UTAMA = new Handler(Looper.getMainLooper());
-    private static final int MAKS_RIWAYAT_DIKIRIM = 16;
     private static final int MAKS_RIWAYAT_TERSIMPAN = 200;
     private static final int TIMEOUT_HUBUNG = 12000;
     private static final int TIMEOUT_BACA = 120000;
@@ -335,7 +334,9 @@ public final class AviBrain {
         JSONArray pesan = new JSONArray();
         pesan.put(new JSONObject().put("role", "system").put("content", persona(ctx)));
         List<Msg> riwayat = muatRiwayat(ctx);
-        int awal = Math.max(0, riwayat.size() - MAKS_RIWAYAT_DIKIRIM);
+        // daya ingat dipilih pemilik (Pengaturan → Daya ingat AI), bawaan 20
+        int maksIngat = pref(ctx).getInt("daya_ingat", 20);
+        int awal = Math.max(0, riwayat.size() - maksIngat);
         for (int i = awal; i < riwayat.size(); i++) {
             Msg m = riwayat.get(i);
             pesan.put(new JSONObject()

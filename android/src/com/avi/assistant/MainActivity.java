@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
@@ -42,6 +43,10 @@ public class MainActivity extends Activity {
     private final List<Msg> isi = new ArrayList<>();
     private boolean sedangStream = false;
     private int posisiAnimasi = Integer.MAX_VALUE;   // baris >= ini dianimasikan
+
+    // TTS mode chat: baca balasan AVI bila switch “Bacakan balasan” menyala
+    private TextToSpeech tts;
+    private boolean ttsSiap = false;
 
     @Override
     protected void attachBaseContext(Context baru) {
@@ -108,7 +113,46 @@ public class MainActivity extends Activity {
                 && !AviBrain.apiKeyAktif(this)) {
             startActivity(new Intent(this, OnboardingActivity.class));
         }
+        if (AviBrain.pref(this).getBoolean("tts_on", false) && tts == null) {
+            siapkanTts();
+        }
         muatIsi();   // sesi Mode Live menulis ke riwayat — segarkan
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (tts != null) {
+            try { tts.stop(); tts.shutdown(); } catch (Exception ignored) {}
+            tts = null;
+            ttsSiap = false;
+        }
+        super.onDestroy();
+    }
+
+    private void siapkanTts() {
+        tts = new TextToSpeech(this, ok -> {
+            ttsSiap = ok == TextToSpeech.SUCCESS;
+            if (!ttsSiap || tts == null) return;
+            try { tts.setLanguage(new Locale("id", "ID")); } catch (Exception ignored) {}
+            try {
+                String namaSuara = AviBrain.pref(this).getString("tts_suara", "");
+                if (!namaSuara.isEmpty() && tts.getVoices() != null) {
+                    for (android.speech.tts.Voice v : tts.getVoices()) {
+                        if (namaSuara.equals(v.getName())) { tts.setVoice(v); break; }
+                    }
+                }
+            } catch (Exception ignored) {}
+            try {
+                tts.setSpeechRate(AviBrain.pref(this).getInt("tts_rate", 100) / 100f);
+            } catch (Exception ignored) {}
+        });
+    }
+
+    /** Bersihkan teks sebelum dibacakan: blok kode dilewati, tandaMarkdown dibuang. */
+    private String teksSuara(String s) {
+        return s.replaceAll("(?s)```.*?```", " (blok kode dilewati) ")
+                .replaceAll("[#*_`>]", " ")
+                .replaceAll("\\s+", " ").trim();
     }
 
     // ============================ tampilan ============================
@@ -169,6 +213,14 @@ public class MainActivity extends Activity {
                 adptr.notifyDataSetChanged();
                 sedangStream = false;
                 pasangIkonAksi();
+                // bacakan bila pemilik mengaktifkannya (Pengaturan → Suara)
+                if (ttsSiap && tts != null && !teksAkhir.trim().isEmpty()) {
+                    String ucap = teksSuara(teksAkhir);
+                    if (!ucap.isEmpty()) {
+                        try { tts.speak(ucap, TextToSpeech.QUEUE_ADD, null,
+                                "chat" + idxAvi); } catch (Exception ignored) {}
+                    }
+                }
             }
         });
     }
