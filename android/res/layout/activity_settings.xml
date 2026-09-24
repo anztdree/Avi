@@ -12,8 +12,8 @@
         <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Pengaturan" android:textColor="@color/avi_teks"
-            android:textSize="24sp" android:textStyle="bold"
-            android:paddingBottom="2dp"/>
+            android:textSize="26sp" android:textStyle="bold"
+            android:paddingBottom="3dp"/>
         <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Perubahan langsung berlaku — sentuh Simpan untuk memastikan."
@@ -225,10 +225,11 @@
 
         <Button
             android:id="@+id/bSimpan"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_width="match_parent" android:layout_height="54dp"
             android:text="Simpan pengaturan"
             android:textAllCaps="false"
             android:textSize="15sp"
+            android:textStyle="bold"
             android:background="@drawable/btn_primary"
             android:textColor="#FFFFFF"
             android:layout_marginBottom="10dp"/>

@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tema CERAH (default) -->
-    <color name="avi_bg">#F4F5F9</color>
+    <!-- Palet CERAH (opsional — bawaan kini GELAP, lihat values-night) -->
+    <color name="avi_bg">#F1F3F9</color>
     <color name="avi_card">#FFFFFF</color>
-    <color name="avi_teks">#1B1C23</color>
-    <color name="avi_teks_samping">#5F6368</color>
+    <color name="avi_card2">#F6F8FD</color>
+    <color name="avi_teks">#171A21</color>
+    <color name="avi_teks_samping">#626C86</color>
     <color name="gelembung_avi">#FFFFFF</color>
-    <color name="gelembung_user">#DCE7FB</color>
-    <color name="aksen">#3B6FE0</color>
-    <color name="garis">#E3E6EE</color>
-    <color name="status_bar">#F4F5F9</color>
-    <color name="dasar_kode">#EEF1F7</color>
+    <color name="gelembung_user">#4F7CFF</color>
+    <color name="aksen">#3E63E8</color>
+    <color name="aksen_muda">#8B5CF6</color>
+    <color name="garis">#E3E7F2</color>
+    <color name="status_bar">#F1F3F9</color>
+    <color name="dasar_kode">#EFF2FA</color>
+    <color name="kaca_sesi">#F2FFFFFF</color>
 </resources>

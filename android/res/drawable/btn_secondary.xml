@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tombol sekunder: pil outline tipis, tanpa isi — untuk aksi ringan. -->
+<!-- Tombol sekunder: pil permukaan terangkat + garis tipis. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="24dp"/>
-    <solid android:color="#00000000"/>
-    <stroke android:width="1.5dp" android:color="@color/avi_teks_samping"/>
+    <corners android:radius="26dp"/>
+    <solid android:color="@color/avi_card2"/>
+    <stroke android:width="1dp" android:color="@color/garis"/>
 </shape>

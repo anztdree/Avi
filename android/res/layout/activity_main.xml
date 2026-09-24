@@ -4,18 +4,30 @@
     android:orientation="vertical"
     android:background="@color/avi_bg">
 
-    <!-- bar atas -->
+    <!-- bar atas: wordmark + aksi pil -->
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingLeft="16dp" android:paddingRight="16dp"
-        android:paddingTop="14dp" android:paddingBottom="8dp">
+        android:paddingLeft="18dp" android:paddingRight="18dp"
+        android:paddingTop="14dp" android:paddingBottom="10dp">
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="AVI" android:textColor="@color/avi_teks"
-            android:textSize="22sp" android:textStyle="bold"/>
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="AVI" android:textColor="@color/avi_teks"
+                android:textSize="24sp" android:textStyle="bold"
+                android:letterSpacing="0.06"/>
+
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="ASISTEN PRIBADI" android:textColor="@color/avi_teks_samping"
+                android:textSize="10sp" android:textStyle="bold"
+                android:letterSpacing="0.22"/>
+        </LinearLayout>
 
         <Space
             android:layout_width="0dp" android:layout_height="1dp"
@@ -25,18 +37,20 @@
             android:id="@+id/btnBaru"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Baru" android:textColor="@color/avi_teks"
-            android:textSize="14sp"
-            android:background="@drawable/chip_bg"
-            android:paddingLeft="14dp" android:paddingRight="14dp"
-            android:paddingTop="8dp" android:paddingBottom="8dp"/>
+            android:textSize="13sp" android:textStyle="bold"
+            android:background="@drawable/btn_pil"
+            android:paddingLeft="16dp" android:paddingRight="16dp"
+            android:paddingTop="9dp" android:paddingBottom="9dp"/>
 
         <TextView
             android:id="@+id/btnPengaturan"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
             android:text="Setelan" android:textColor="@color/avi_teks_samping"
-            android:textSize="14sp"
-            android:paddingLeft="14dp" android:paddingRight="6dp"
-            android:paddingTop="8dp" android:paddingBottom="8dp"/>
+            android:textSize="13sp" android:textStyle="bold"
+            android:background="@drawable/btn_pil"
+            android:paddingLeft="16dp" android:paddingRight="16dp"
+            android:paddingTop="9dp" android:paddingBottom="9dp"/>
     </LinearLayout>
 
     <!-- hero: sapaan + orb + chips (hanya saat chat kosong) -->
@@ -45,28 +59,29 @@
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:padding="24dp">
+        android:paddingTop="18dp" android:paddingBottom="18dp"
+        android:paddingLeft="24dp" android:paddingRight="24dp">
 
         <com.avi.assistant.OrbView
             android:id="@+id/orbHero"
-            android:layout_width="96dp" android:layout_height="96dp"/>
+            android:layout_width="112dp" android:layout_height="112dp"/>
 
         <TextView
             android:id="@+id/tvSalam"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:textColor="@color/avi_teks" android:textSize="22sp"
+            android:layout_marginTop="18dp"
+            android:textColor="@color/avi_teks" android:textSize="25sp"
             android:textStyle="bold"/>
 
         <TextView
             android:id="@+id/tvSub"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
             android:textColor="@color/avi_teks_samping" android:textSize="14sp"/>
 
         <HorizontalScrollView
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="22dp"
             android:scrollbars="none">
 
             <LinearLayout
@@ -88,17 +103,18 @@
         android:layout_width="match_parent" android:layout_height="0dp"
         android:layout_weight="1"
         android:divider="@null"
-        android:paddingLeft="12dp" android:paddingRight="12dp"
-        android:paddingBottom="8dp"
+        android:paddingLeft="14dp" android:paddingRight="14dp"
+        android:paddingTop="6dp" android:paddingBottom="8dp"
         android:scrollbars="none"
         android:clipToPadding="false"/>
 
-    <!-- input pill -->
+    <!-- input bar -->
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="bottom"
-        android:padding="10dp">
+        android:paddingLeft="14dp" android:paddingRight="14dp"
+        android:paddingTop="8dp" android:paddingBottom="12dp">
 
         <EditText
             android:id="@+id/etInput"
@@ -111,16 +127,16 @@
             android:textSize="15sp"
             android:maxLines="4"
             android:inputType="textCapSentences|textMultiLine"
-            android:paddingLeft="18dp" android:paddingRight="18dp"
-            android:paddingTop="13dp" android:paddingBottom="13dp"/>
+            android:paddingLeft="20dp" android:paddingRight="20dp"
+            android:paddingTop="14dp" android:paddingBottom="14dp"/>
 
         <ImageView
             android:id="@+id/bAksi"
-            android:layout_width="50dp" android:layout_height="50dp"
-            android:layout_marginLeft="8dp"
+            android:layout_width="54dp" android:layout_height="54dp"
+            android:layout_marginLeft="10dp"
             android:background="@drawable/lingkaran_aksi"
             android:src="@drawable/ic_mic"
-            android:padding="13dp"
+            android:padding="14dp"
             android:tint="#FFFFFF"
             android:contentDescription="Kirim / Mode Live"/>
     </LinearLayout>

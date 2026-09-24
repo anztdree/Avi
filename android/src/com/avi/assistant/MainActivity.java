@@ -6,7 +6,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.text.Editable;
@@ -78,10 +77,6 @@ public class MainActivity extends Activity {
             TextView chip = (TextView) barisChips.getChildAt(i);
             chip.setOnClickListener(v -> kirim(chip.getText().toString()));
         }
-
-        int aksen = AviBrain.warnaAksen(this);
-        bAksi.getBackground().mutate()
-                .setColorFilter(aksen, PorterDuff.Mode.SRC_ATOP);
 
         bAksi.setOnClickListener(v -> {
             String t = etInput.getText().toString().trim();
@@ -266,12 +261,6 @@ public class MainActivity extends Activity {
             gelembung.setLayoutParams(lp);
             gelembung.setBackgroundResource(m.dariUser
                     ? R.drawable.bubble_user : R.drawable.bubble_avi);
-            if (m.dariUser) {
-                int dasar = getResources().getColor(R.color.gelembung_user, getTheme());
-                gelembung.getBackground().mutate().setColorFilter(
-                        AviBrain.campurWarna(AviBrain.warnaAksen(MainActivity.this), dasar, 0.35f),
-                        PorterDuff.Mode.SRC_ATOP);
-            }
             baris.addView(gelembung);
 
             // pisahkan blok kode (``` ... ```) dari teks biasa
@@ -282,7 +271,9 @@ public class MainActivity extends Activity {
                     TextView tv = new TextView(MainActivity.this);
                     tv.setText(bagian[i].trim());
                     tv.setTextSize(15f);
-                    tv.setTextColor(getResources().getColor(R.color.avi_teks, getTheme()));
+                    // teks di gelembung gradasi (user) harus putih
+                    tv.setTextColor(m.dariUser ? 0xFFFFFFFF
+                            : getResources().getColor(R.color.avi_teks, getTheme()));
                     gelembung.addView(tv);
                 } else {                                // blok kode
                     String kode = bagian[i].replaceFirst("^[a-zA-Z0-9_+-]*\\n", "").trim();

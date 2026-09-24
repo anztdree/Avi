@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Gelembung pengguna: gradasi aksen, ekor kecil di kanan bawah. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="22dp"
-        android:bottomRightRadius="6dp"/>
-    <solid android:color="@color/gelembung_user"/>
+    <corners android:radius="22dp" android:bottomRightRadius="6dp"/>
+    <gradient android:type="linear" android:angle="0"
+        android:startColor="@color/aksen"
+        android:endColor="@color/aksen_muda"/>
 </shape>

@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tema GELAP -->
-    <color name="avi_bg">#101216</color>
-    <color name="avi_card">#1B1E26</color>
-    <color name="avi_teks">#E8EAF0</color>
-    <color name="avi_teks_samping">#9AA0A6</color>
-    <color name="gelembung_avi">#23262F</color>
-    <color name="gelembung_user">#2C3A5E</color>
-    <color name="aksen">#3B6FE0</color>
-    <color name="garis">#2A2E38</color>
-    <color name="status_bar">#101216</color>
-    <color name="dasar_kode">#232733</color>
+    <!-- Palet GELAP (bawaan — wajah modern AVI: navy pekat + aksen gradasi) -->
+    <color name="avi_bg">#0A0E17</color>
+    <color name="avi_card">#131928</color>
+    <color name="avi_card2">#1A2236</color>
+    <color name="avi_teks">#F2F5FC</color>
+    <color name="avi_teks_samping">#8E99B0</color>
+    <color name="gelembung_avi">#1A2236</color>
+    <color name="gelembung_user">#4F7CFF</color>
+    <color name="aksen">#6D8CFF</color>
+    <color name="aksen_muda">#9B7CFF</color>
+    <color name="garis">#232C42</color>
+    <color name="status_bar">#0A0E17</color>
+    <color name="dasar_kode">#0D1422</color>
+    <color name="kaca_sesi">#E6111726</color>
 </resources>

@@ -540,10 +540,11 @@ public final class AviBrain {
     // ============================ tema ============================
 
     public static boolean temaGelap(Context c) {
-        return "gelap".equals(pref(c).getString("tema", "cerah"));
+        // bawaan GELAP — wajah modern AVI (pemilik minta tampilan modern)
+        return !"cerah".equals(pref(c).getString("tema", "gelap"));
     }
 
-    /** Paksa context memakai mode ui sesuai tema terpilih (bawaan: cerah). */
+    /** Paksa context memakai mode ui sesuai tema terpilih (bawaan: gelap). */
     public static Context terapkanTema(Context dasar) {
         boolean gelap = temaGelap(dasar);
         Configuration cfg = new Configuration(dasar.getResources().getConfiguration());

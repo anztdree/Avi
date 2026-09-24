@@ -5,18 +5,19 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:orientation">vertical</item>
         <item name="android:background">@drawable/card_settings</item>
-        <item name="android:padding">14dp</item>
-        <item name="android:layout_marginBottom">12dp</item>
+        <item name="android:padding">18dp</item>
+        <item name="android:layout_marginBottom">14dp</item>
     </style>
 
     <style name="JudulKartu">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textColor">@color/avi_teks_samping</item>
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">11sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">true</item>
-        <item name="android:paddingBottom">6dp</item>
+        <item name="android:letterSpacing">0.12</item>
+        <item name="android:paddingBottom">8dp</item>
     </style>
 
     <style name="PilihanSetting">
@@ -24,8 +25,8 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textColor">@color/avi_teks</item>
         <item name="android:textSize">14sp</item>
-        <item name="android:paddingTop">4dp</item>
-        <item name="android:paddingBottom">4dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
     </style>
 
     <style name="ChipSaran">
@@ -34,11 +35,11 @@
         <item name="android:background">@drawable/chip_bg</item>
         <item name="android:textColor">@color/avi_teks</item>
         <item name="android:textSize">13sp</item>
-        <item name="android:paddingLeft">16dp</item>
-        <item name="android:paddingRight">16dp</item>
-        <item name="android:paddingTop">10dp</item>
-        <item name="android:paddingBottom">10dp</item>
-        <item name="android:layout_marginRight">8dp</item>
+        <item name="android:paddingLeft">18dp</item>
+        <item name="android:paddingRight">18dp</item>
+        <item name="android:paddingTop">11dp</item>
+        <item name="android:paddingBottom">11dp</item>
+        <item name="android:layout_marginRight">10dp</item>
         <item name="android:clickable">true</item>
     </style>
 

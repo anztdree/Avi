@@ -320,12 +320,29 @@ public class SettingsActivity extends Activity {
     }
 
     private void bukaPengaturanAsisten() {
-        try {
-            startActivity(new Intent(Settings.ACTION_VOICE_INPUT_SETTINGS));
-        } catch (Exception e) {
-            try { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
-            catch (Exception ignored) {}
+        // Layar pemilih asisten berbeda-beda tiap pabrikan (stock, Samsung,
+        // Xiaomi/MIUI-HyperOS, OPPO, vivo) — coba satu per satu sampai ada
+        // yang terbuka, terakhir buka Pengaturan biasa.
+        Intent[] kandidat = new Intent[]{
+                new Intent(Settings.ACTION_VOICE_INPUT_SETTINGS),
+                new Intent().setClassName("com.android.settings",
+                        "com.android.settings.Settings$VoiceInputSettingsActivity"),
+                new Intent().setClassName("com.android.settings",
+                        "com.android.settings.voice.VoiceInputSettings"),
+                new Intent("com.android.settings.VOICE_INPUT_SETTINGS"),
+                new Intent("android.settings.ASSIST_SETTINGS"),
+                new Intent(Settings.ACTION_SETTINGS)
+        };
+        for (Intent it : kandidat) {
+            try {
+                startActivity(it);
+                return;
+            } catch (Exception ignored) {}
         }
+        Toast.makeText(this,
+                "Layar asisten tidak ditemukan — cari \u201CAplikasi default\u201D "
+                        + "atau \u201CDigital assistant\u201D di Pengaturan.",
+                Toast.LENGTH_LONG).show();
     }
 
     // ================= dialog pilih suara TTS =================
