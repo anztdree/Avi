@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BADGE ORB MELAYANG (b16) — cakram gelap solid + cincin sian.
+     Keluhan pemilik: "floating tidak jelas sama sekali" — orb sebelumnya
+     hanya pendaran transparan (alfa 40-85) sehingga nyaris tak terlihat
+     di wallpaper/aplikasi terang. Kini orb punya badan jelas di latar
+     APA PUN, animasi cair OrbView tetap hidup di dalamnya. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- badan: cakram gelap hampir solid + cincin sian tegas -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#F20D1526"/>
+            <stroke android:width="2dp" android:color="#FF38BDF8"/>
+        </shape>
+    </item>
+    <!-- lapisan dalam: tint sian halus di bawah orb -->
+    <item android:left="5dp" android:top="5dp"
+          android:right="5dp" android:bottom="5dp">
+        <shape android:shape="oval">
+            <solid android:color="#1A038BDC"/>
+        </shape>
+    </item>
+</layer-list>

@@ -130,7 +130,10 @@ public class MainActivity extends Activity {
                 && !AviBrain.apiKeyAktif(this)) {
             startActivity(new Intent(this, OnboardingActivity.class));
         }
-        if (AviBrain.pref(this).getBoolean("tts_on", false) && tts == null) {
+        // b16: suara DEFAULT NYALA — AVI asisten SUARA; dulu bawaan mati
+        // sehingga di aplikasi AVI tidak pernah bersuara (keluhan pemilik
+        // "suara avi tidak keluar"). Pilihan mematikan tetap dihormati.
+        if (AviBrain.pref(this).getBoolean("tts_on", true) && tts == null) {
             siapkanTts();
         }
         muatIsi();   // sesi Mode Live menulis ke riwayat — segarkan
@@ -150,7 +153,14 @@ public class MainActivity extends Activity {
         tts = new TextToSpeech(this, ok -> {
             ttsSiap = ok == TextToSpeech.SUCCESS;
             if (!ttsSiap || tts == null) return;
-            try { tts.setLanguage(new Locale("id", "ID")); } catch (Exception ignored) {}
+            // b16: fallback bahasa — tanpa data suara Indonesia, coba pakai
+            // suara bawaan ponsel daripada gagal senyap tanpa suara.
+            boolean oke = false;
+            try { oke = tts.setLanguage(new Locale("id", "ID"))
+                    >= TextToSpeech.LANG_AVAILABLE; } catch (Exception ignored) {}
+            if (!oke) {
+                try { tts.setLanguage(new Locale("id")); } catch (Exception ignored) {}
+            }
             try {
                 String namaSuara = AviBrain.pref(this).getString("tts_suara", "");
                 if (!namaSuara.isEmpty() && tts.getVoices() != null) {

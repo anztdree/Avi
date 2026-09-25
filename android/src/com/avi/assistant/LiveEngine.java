@@ -78,6 +78,12 @@ public class LiveEngine {
     private static final Object KUNCI_TTS = new Object();
     private static TextToSpeech ttsBersama;
     private static boolean ttsBersamaSiap = false;
+    // b16 anti-suara-hilang: instance TTS yang rusak (proses mesin suara
+    // dibunuh sistem di HP low-RAM, atau init gagal) TIDAK BOLEH dipakai
+    // terus — dulu jadi "zombie" sunyi: speak() dipanggil, tidak ada suara,
+    // tidak ada pesan. Kini ditandai rusak lalu dibangun ulang otomatis.
+    private static boolean ttsBersamaRusak = false;
+    private static int gagalBangun = 0;      // batas percobaan bangun ulang
 
     // ==== cache verifikasi gerbang sapa (b14, DIPANGKAS di b15) ====
     // b14: cache 15 menit demi kecepatan - tapi pemilik melapor kalibrasi
@@ -95,6 +101,7 @@ public class LiveEngine {
     private TextToSpeech tts;
     private GerbangSapa gerbang;
     private boolean ttsSiap = false;
+    private boolean bahasaDiberiTahu = false;  // pesan "suara Indonesia belum ada" sekali per sesi
     private boolean hidup = false;
     private boolean sudahTidur = false;
     private boolean punyaPercakapan = false;
@@ -165,6 +172,13 @@ public class LiveEngine {
 
     private void siapkanTts() {
         synchronized (KUNCI_TTS) {
+            // b16: instance rusak DIGANTI BARU, bukan dipangkuk terus
+            if (ttsBersama != null && ttsBersamaRusak) {
+                try { ttsBersama.shutdown(); } catch (Exception ignored) {}
+                ttsBersama = null;
+                ttsBersamaSiap = false;
+                ttsBersamaRusak = false;
+            }
             if (ttsBersama != null) {
                 // reuse TTS hangat — tinggal pasang suara & pendengar giliran ini
                 tts = ttsBersama;
@@ -179,16 +193,39 @@ public class LiveEngine {
                     // simpan untuk SEMUA sesi berikutnya (tidak di-shutdown)
                     ttsBersama = tts;
                     ttsBersamaSiap = siap;
+                    if (siap) gagalBangun = 0;
+                    else ttsBersamaRusak = true;   // b16: jangan dipakai zombie
                 }
-                if (!siap) return;
+                if (!siap) {
+                    cobaBangunUlangTts();   // b16: dulu diam selamanya
+                    return;
+                }
                 if (hidup) aturSuaraTts();
             });
         }
     }
 
+    /** b16: init gagal → bangun ulang otomatis maks 3x dengan jeda;
+     *  bila tetap gagal, pemilik DIBERITAHU (mode teks), bukan didiamkan. */
+    private void cobaBangunUlangTts() {
+        if (!hidup) return;
+        if (gagalBangun >= 3) {
+            p.status("Mesin suara gagal menyala — jawaban tampil sebagai teks, "
+                    + AviBrain.namaPemilik(ctx) + ".");
+            return;
+        }
+        gagalBangun++;
+        handler.postDelayed(() -> { if (hidup) siapkanTts(); }, 1500);
+    }
+
     /** TTS hangat masih init — tunggu sampai siap lalu pasang suara sesi ini. */
     private void tungguTtsHangat(final int putaran) {
-        if (putaran > 12) return;   // >9,6 dtk: anggap TTS gagal — mode teks saja
+        if (putaran > 12) {
+            // b16: dulu menyerah DALAM DIAM — sekarang pemilik diberi tahu
+            if (hidup) p.status("Mesin suara lambat menyala — jawaban tampil "
+                    + "sebagai teks dulu, " + AviBrain.namaPemilik(ctx) + ".");
+            return;
+        }
         handler.postDelayed(() -> {
             if (!hidup || tts == null || tts != ttsBersama) return;
             if (ttsBersamaSiap) {
@@ -203,7 +240,24 @@ public class LiveEngine {
     /** Terapkan bahasa/suara/laju + pendengar giliran milik mesin INI. */
     private void aturSuaraTts() {
         if (tts == null) return;
-        try { tts.setLanguage(new Locale("id", "ID")); } catch (Exception ignored) {}
+        // b16: hasil setLanguage TIDAK diabaikan lagi — tanpa data suara
+        // Indonesia (umum di HP itel/Transsion) dulu sintesis gagal senyap.
+        boolean bahasaOke = false;
+        try {
+            bahasaOke = tts.setLanguage(new Locale("id", "ID"))
+                    >= TextToSpeech.LANG_AVAILABLE;
+        } catch (Exception ignored) {}
+        if (!bahasaOke) {
+            try {
+                bahasaOke = tts.setLanguage(new Locale("id"))
+                        >= TextToSpeech.LANG_AVAILABLE;
+            } catch (Exception ignored) {}
+        }
+        if (!bahasaOke && !bahasaDiberiTahu) {
+            bahasaDiberiTahu = true;
+            p.status("Data suara Indonesia belum terpasang — AVI memakai "
+                    + "suara bawaan ponsel.");
+        }
         try {
             String namaSuara = AviBrain.pref(ctx).getString("tts_suara", "");
             if (!namaSuara.isEmpty() && tts.getVoices() != null) {
@@ -214,6 +268,14 @@ public class LiveEngine {
         } catch (Exception ignored) {}
         try { tts.setSpeechRate(AviBrain.pref(ctx).getInt("tts_rate", 100) / 100f); }
         catch (Exception ignored) {}
+        pasangPendengarTts();
+    }
+
+    /** b16: pendengar giliran WAJIB dipasang ulang oleh mesin yang sedang
+     *  bicara — instance TTS dibagi lintas sesi, dan listener sesi lama
+     *  bisa mencuri onDone sehingga sesi baru membeku setelah bicara. */
+    private void pasangPendengarTts() {
+        if (tts == null) return;
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override public void onStart(String id) {}
             @Override public void onDone(String id) { ucapBeres(id); }
@@ -226,7 +288,13 @@ public class LiveEngine {
      *  supaya ketuk gelembung tidak menunggu inisialisasi mesin suara. */
     public static void panaskanTts(Context context) {
         synchronized (KUNCI_TTS) {
-            if (ttsBersama != null) return;
+            if (ttsBersama != null && !ttsBersamaRusak) return;
+            if (ttsBersama != null) {   // b16: ganti instance rusak
+                try { ttsBersama.shutdown(); } catch (Exception ignored) {}
+                ttsBersama = null;
+                ttsBersamaSiap = false;
+                ttsBersamaRusak = false;
+            }
             Context app = context.getApplicationContext();
             final TextToSpeech[] wadah = new TextToSpeech[1];
             wadah[0] = new TextToSpeech(app, ok -> {
@@ -243,11 +311,33 @@ public class LiveEngine {
 
     private void ucapkan(String potongan) {
         String s = potongan.trim();
-        if (s.isEmpty() || !ttsSiap || tts == null) return;
+        if (s.isEmpty() || tts == null) return;
+        if (!ttsSiap) {
+            // b16: init mungkin BARU selesai setelah penantian — ambil keadaan
+            // terkini; bila memang belum siap, jangan buang ucapan diam-diam
+            // tanpa kabar (dulu: suara tidak keluar tanpa pesan apa pun).
+            if (ttsBersamaSiap && tts == ttsBersama) {
+                ttsSiap = true;
+                aturSuaraTts();
+            } else {
+                return;
+            }
+        }
         nomorUcap++;
         idUcapTerakhir = "live" + sesi + "_" + nomorUcap;
         ttsSelesai = false;
-        tts.speak(s, TextToSpeech.QUEUE_ADD, null, idUcapTerakhir);
+        pasangPendengarTts();   // b16: pastikan giliran milik mesin ini
+        int antre;
+        try { antre = tts.speak(s, TextToSpeech.QUEUE_ADD, null, idUcapTerakhir); }
+        catch (Exception e) { antre = -1; }
+        if (antre < 0) {
+            // b16: mesin suara mati di tengah jalan (proses TTS dibunuh
+            // sistem) — dulu zombie sunyi sampai aplikasi ditutup; kini
+            // ditandai rusak & dibangun ulang untuk kalimat berikutnya.
+            synchronized (KUNCI_TTS) { ttsBersamaRusak = true; }
+            ttsSiap = false;
+            cobaBangunUlangTts();
+        }
     }
 
     private void ucapBeres(String id) {
@@ -295,14 +385,14 @@ public class LiveEngine {
 
     private void jalankanGerbang() {
         setKeadaan(OrbView.SIAP);
-        p.status("Verifikasi suara — ucapkan \u201CHai AVI\u201D");
+        p.status("Verifikasi suara — ucapkan \u201CHai AVI\u201D (sentuh orb = lewat)");
         p.transkripAnda("");
         p.teksAvi("");
         if (gerbang != null) gerbang.hentikan();
         gerbang = new GerbangSapa(ctx, new GerbangSapa.Panggilan() {
             @Override public void menunggu(int kes, int maks) {
                 if (!hidup || sudahTidur) return;
-                p.status("Verifikasi suara (coba " + kes + "/" + maks
+                p.status("Verifikasi (coba " + kes + "/" + maks
                         + ") — ucapkan \u201CHai AVI\u201D");
             }
             @Override public void hasil(boolean lolos, int persen, String pesan) {

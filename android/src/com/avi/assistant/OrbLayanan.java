@@ -17,6 +17,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
@@ -163,7 +164,7 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
         if (orbAkar != null && lpOrb != null) {
             int lebar = getResources().getDisplayMetrics().widthPixels;
             int tinggi = getResources().getDisplayMetrics().heightPixels;
-            lpOrb.x = klem(lpOrb.x, 0, lebar - dip(58));
+            lpOrb.x = klem(lpOrb.x, 0, lebar - dip(64));
             lpOrb.y = klem(lpOrb.y, 0, tinggi / 2);
             try { wm.updateViewLayout(orbAkar, lpOrb); } catch (Exception ignored) {}
         }
@@ -179,7 +180,10 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
         orbKecil = orbAkar.findViewById(R.id.orbMelayang);
         orbKecil.setWarnaOrb(0xFF38BDF8);
         orbAkar.setOnTouchListener(this::sentuhOrb);
-        try { wm.addView(orbAkar, lpOrb); } catch (Exception e) {
+        try {
+            wm.addView(orbAkar, lpOrb);
+            tampilkanTipOrb();   // b16: petunjuk gestur sekali — orb dulu "tidak jelas"
+        } catch (Exception e) {
             orbAkar = null;   // jendela gagal — biarkan layanan tenang
         }
     }
@@ -201,7 +205,11 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
         return lp;
     }
 
-    /** Sentuh orb: geser = pindah; ketuk = buka lembar; tahan = pamit. */
+    /** Sentuh orb: geser = pindah; ketuk = buka lembar; tahan 1,2 dtk = pamit.
+     *  b16: dulu tahan 0,6 dtk LANGSUNG menutup orb total — di layar sentuh
+     *  lambat sentuhan biasa sering melewati 0,6 dtk sehingga orb tiba-tiba
+     *  menghilang sendiri (terasa "tidak berfungsi"); kini 1,2 dtk dan
+     *  ketukan diberi umpan balik mengecil supaya jelas hidup. */
     private boolean sentuhOrb(View v, MotionEvent ev) {
         float rawX = ev.getRawX(), rawY = ev.getRawY();
         switch (ev.getActionMasked()) {
@@ -209,12 +217,14 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
                 orbSentuhAwal = rawX; orbSentuhAwalY = rawY;
                 orbPosAwal = lpOrb.x; orbPosAwalY = lpOrb.y;
                 orbGeser = false;
-                ui.postDelayed(this::pamitOrb, 600);   // kandidat tahan-lama
+                if (orbKecil != null) orbKecil.animate().scaleX(0.86f)
+                        .scaleY(0.86f).setDuration(90L).start();
+                ui.postDelayed(this::pamitOrb, 1200);   // kandidat tahan-lama
                 return true;
             case MotionEvent.ACTION_MOVE:
                 float dx = rawX - orbSentuhAwal;
                 float dy = rawY - orbSentuhAwalY;
-                if (!orbGeser && Math.hypot(dx, dy) > dip(9)) {
+                if (!orbGeser && Math.hypot(dx, dy) > ambangGeser()) {
                     orbGeser = true;
                     ui.removeCallbacks(this::pamitOrb);
                 }
@@ -222,7 +232,7 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
                     int lebar = getResources().getDisplayMetrics().widthPixels;
                     int tinggi = getResources().getDisplayMetrics().heightPixels;
                     // gravity END: x tumbuh ke kiri; gravity BOTTOM: y tumbuh ke bawah
-                    lpOrb.x = klem((int) (orbPosAwal - dx), 0, lebar - dip(58));
+                    lpOrb.x = klem((int) (orbPosAwal - dx), 0, lebar - dip(64));
                     lpOrb.y = klem((int) (orbPosAwalY + dy), dip(24), tinggi / 2);
                     try { wm.updateViewLayout(orbAkar, lpOrb); } catch (Exception ignored) {}
                 }
@@ -230,6 +240,8 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 ui.removeCallbacks(this::pamitOrb);
+                if (orbKecil != null) orbKecil.animate().scaleX(1f)
+                        .scaleY(1f).setDuration(120L).start();
                 if (!orbGeser && ev.getActionMasked() == MotionEvent.ACTION_UP) {
                     bukaLembar();
                 }
@@ -241,11 +253,54 @@ public class OrbLayanan extends Service implements LiveEngine.Pendengar {
     private int orbPosAwal, orbPosAwalY;
     private boolean orbGeser;
 
+    /** b16: ambang geser diambil dari SISTEM (x2) — dulu 9dp tetap; di
+     *  layar sentuh lambat ketukan sering ikut bergeser >9dp sehingga
+     *  terhitung geser dan lembar tidak pernah terbuka ("tidak berfungsi"). */
+    private int ambangGeser() {
+        return ViewConfiguration.get(this).getScaledTouchSlop() * 2;
+    }
+
     /** Tahan lama → AVI pamit: orb ditutup total. */
     private void pamitOrb() {
         Toast.makeText(this, "Orb AVI ditutup — panggil lagi lewat tahan "
                 + "tombol home.", Toast.LENGTH_SHORT).show();
         matikanTotal();
+    }
+
+    // ====================== petunjuk gestur (b16) =========================
+
+    private static boolean tipSudahTampil = false;   // sekali per proses
+
+    /** b16: orb dulu hanya pendaran transparan TANPA keterangan apa pun —
+     *  pemilik tidak tahu harus apa ("tidak jelas sama sekali"). Kini
+     *  badge orb diberi cincin jelas (layangan_orb.xml) + tip melayang
+     *  sekali di dekat orb. Tip TIDAK BISA disentuh (NOT_TOUCHABLE) dan
+     *  hilang sendiri — tidak mengganggu aplikasi di bawah. */
+    private void tampilkanTipOrb() {
+        if (tipSudahTampil) return;
+        tipSudahTampil = true;
+        try {
+            TextView tip = new TextView(this);
+            tip.setBackgroundResource(R.drawable.pil_tooltip);
+            tip.setPadding(dip(14), dip(8), dip(14), dip(8));
+            tip.setTextColor(0xFFE2E8F0);
+            tip.setTextSize(12f);
+            tip.setText("Ketuk: obrolan  \u2022  Geser: pindah  \u2022  Tahan: tutup");
+            int tipe = Build.VERSION.SDK_INT >= 26
+                    ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    : WindowManager.LayoutParams.TYPE_PHONE;
+            WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, tipe,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                            | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    PixelFormat.TRANSLUCENT);
+            lp.gravity = Gravity.BOTTOM | Gravity.END;
+            lp.x = dip(10);
+            lp.y = dip(178);
+            wm.addView(tip, lp);
+            ui.postDelayed(() -> lepasView(tip), 5200);
+        } catch (Exception ignored) {}   // tip gagal — bukan hal fatal
     }
 
     // ========================= lembar obrolan =========================
