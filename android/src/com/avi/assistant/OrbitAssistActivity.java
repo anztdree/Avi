@@ -1,14 +1,8 @@
 package com.avi.assistant;
 
-import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
@@ -18,38 +12,36 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
- * PINTU ASISTEN versi ACTIVITY — kini TRAMPOLIN (b13).
+ * PINTU ASISTEN versi PANEL GOOGLE (b17).
  *
- * Latar belakang permintaan pemilik (2026-09-24): "kok malah munculkan
- * orb dan balik buka AVI itu ama aja bohong" — dulu activity ini
- * MENJADI layarnya sendiri, jadi tahan tombol home terasa seperti
- * membuka aplikasi AVI. Sekarang: bila izin "muncul di atas aplikasi
- * lain" sudah ada, activity ini hanya MEMULAI OrbLayanan (jendela
- * melayang SYSTEM_ALERT_WINDOW: orb + lembar obrolan compact DI ATAS
- * aplikasi apa pun) lalu menutup diri — aplikasi yang sedang dipakai
- * tidak pernah tertutup.
+ * Keluhan pemilik (2026-09-25): tahan tombol home terasa BERAT dan penuh
+ * bug karena rantai trampoline — activity dibuka → startForegroundService
+ * (kanal notifikasi + notifikasi + startForeground + jendela overlay +
+ * gelembung) → activity ditutup lagi → pemilik HARUS MENGETUK gelembung
+ * lagi baru lembar obrolan muncul. Tiga transisi + satu ketukan manual.
  *
- * Tanpa izin melayang: ditawarkan SEKALI (dialog), lalu jatuh ke jalur
- * lama — lembar bawah di dalam activity ini (tetap berfungsi normal).
- * Izin dapat diberikan kapan saja lewat Pengaturan → Orb melayang.
+ * Google melakukan SATU hal: tahan home → panel asisten LANGSUNG, satu
+ * transisi, tanpa layanan, tanpa notifikasi. Sekarang AVI sama persis:
+ * activity translucent ini menampilkan panel ala Google Assistant
+ * SEKETIKA (kartu mengapung bersudut 28dp, greeting "Hai, [nama]!",
+ * orb gradien multi-warna), mesin menyala di onResume — panel tidak
+ * pernah menunggu apa pun.
  *
- * KENAPA ADA FILE INI (hasil penelusuran kode sumber AOSP 12):
- * AssistManager.startAssist() membaca isi Settings.Secure.ASSISTANT —
- * bila isinya BUKAN VoiceInteractionService yang aktif, sistem TIDAK
- * menampilkan sesi overlay, melainkan meluncurkan ACTIVITY ber-intent
- * ACTION_ASSIST (startAssistActivity). Di perangkat low-RAM (umum di
- * HP itel/Transsion seperti itel S23) jalur VoiceInteractionService
- * bahkan dilewati saat kualifikasi — asisten selalu dijalankan sebagai
- * activity, persis model "Google Assistant Go". Jadi activity inilah
- * titik masuk asisten di HP pemilik — dan kini ia hanya trampolin.
+ * GELEMBUNG ORB TIDAK DIHAPUS: OrbLayanan tetap ada sebagai fitur
+ * opt-in dari Pengaturan → Orb melayang (untuk dipakai di atas aplikasi
+ * lain), hanya saja TIDAK lagi dipanggil oleh tahan tombol home.
+ *
+ * Batas platform (riset AOSP 12): di perangkat low-RAM (umum di itel/
+ * Transsion) sistem meluncurkan asisten sebagai ACTIVITY ber-intent
+ * ACTION_ASSIST — activity inilah titik masuk asisten di HP pemilik.
+ * Di HP non-low-RAM, jalur AviSession (VoiceInteractionSession) memakai
+ * layout dan mesin yang sama — tampilan identik.
  */
 public class OrbitAssistActivity extends Activity implements LiveEngine.Pendengar {
 
-    private static final String PREF_TAWARAN = "izin_layang_ditawarkan";
-
     private View akar, lembar;
     private OrbView orb;
-    private TextView tvStatus, tvAnda, tvAvi;
+    private TextView tvSapa, tvStatus, tvAnda, tvAvi;
     private ScrollView gulirPapan;              // papan pesan bersama
     private LinearLayout papanPesan;
     private LiveEngine mesin;
@@ -64,73 +56,12 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (cobaLayananMelayang()) {   // true = layanan melayang menyala
-            finish();                  // kembali ke aplikasi yang dipakai
-            return;
-        }
-        // tanpa izin melayang (atau tanpa izin mikrofon) → jalur lama
-        siapkanLembarActivity();
+        siapkanPanelGoogle();   // b17: LANGSUNG — tanpa trampoline/layanan
     }
 
-    /**
-     * Coba mulai OrbLayanan. Bila izin overlay belum ada, tawarkan
-     * sekali saja (sisanya dialog jangan mengganggu tiap tahan home).
-     * @return true bila layanan berhasil dimulai.
-     */
-    private boolean cobaLayananMelayang() {
-        boolean izinMic = checkSelfPermission(Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED;
-        if (!izinMic) return false;    // jalur lama menampilkan pesan mic
+    // ============ panel ala Google: tampil seketika, ringan ============
 
-        if (Settings.canDrawOverlays(this)) {
-            try {
-                Intent it = new Intent(this, OrbLayanan.class);
-                // ATURAN PEMILIK (b14): tahan tombol home yang muncul CUMA
-                // gelembung orb kecil — JANGAN langsung buka lembar. Ketuk
-                // gelembungnya baru papan pesan muncul.
-                it.setAction(OrbLayanan.AKSI_ORB);
-                startForegroundService(it);
-                return true;
-            } catch (Exception e) {
-                return false;          // sistem menolak start — jalur lama
-            }
-        }
-
-        if (!AviBrain.pref(this).getBoolean(PREF_TAWARAN, false)) {
-            AviBrain.pref(this).edit().putBoolean(PREF_TAWARAN, true).apply();
-            new AlertDialog.Builder(this)
-                    .setTitle("Orb melayang di atas aplikasi?")
-                    .setMessage("Beri AVI izin \u201Cmuncul di atas aplikasi "
-                            + "lain\u201D — nanti tahan tombol home akan "
-                            + "memunculkan orb & obrolan AVI DI ATAS aplikasi "
-                            + "yang sedang dipakai, tanpa pindah aplikasi.")
-                    .setPositiveButton("Beri izin", (d, w) -> {
-                        try {
-                            startActivity(new Intent(
-                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                    Uri.parse("package:" + getPackageName())));
-                        } catch (Exception e) {
-                            try {
-                                startActivity(new Intent(
-                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
-                            } catch (Exception ignored) {}
-                        }
-                        finish();
-                    })
-                    .setNegativeButton("Nanti", (d, w) -> {
-                        siapkanLembarActivity();   // jalur lama kali ini
-                    })
-                    .setCancelable(false)
-                    .show();
-            return false;   // activity tetap hidup menampung dialog
-        }
-        return false;
-    }
-
-    // ============ jalur lama: lembar bawah di dalam activity ============
-
-    private void siapkanLembarActivity() {
+    private void siapkanPanelGoogle() {
         if (layarSiap) return;
         layarSiap = true;
         setContentView(R.layout.overlay_avisession);
@@ -139,13 +70,18 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
         akar = konten.getChildAt(0);
         lembar = akar.findViewById(R.id.lembarSesi);
         orb = akar.findViewById(R.id.orbSesi);
+        tvSapa = akar.findViewById(R.id.tvSapa);
         tvStatus = akar.findViewById(R.id.tvStatusSesi);
         tvAnda = akar.findViewById(R.id.tvAndaSesi);
         tvAvi = akar.findViewById(R.id.tvAviSesi);
         gulirPapan = akar.findViewById(R.id.gulirPapan);
         papanPesan  = akar.findViewById(R.id.papanPesan);
-        // sesi selalu gelap → orb sian elektrik (bukan warna tema)
+
+        // sesi selalu gelap → orb gradien ala Google (b17)
         orb.setWarnaOrb(0xFF38BDF8);
+        orb.setGradienGoogle(true);
+        // greeting ala "Hi, how can I help?"
+        tvSapa.setText("Hai, " + AviBrain.namaPemilik(this) + "!");
         // SATU PAPAN PESAN: riwayat yang sama persis dengan aplikasi AVI
         PapanPesan.render(this, papanPesan, gulirPapan, true);
 
@@ -160,20 +96,19 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
             else if (k == OrbView.SIAP) mesin.dengarkanLagi();
         });
 
-        // animasi masuk: lembar naik dari pangkal layar + memudar, orb
-        // melebar — identik dengan sesi overlay supaya kedua jalur
-        // terasa sama.
+        // animasi masuk: kartu naik dari pangkal + orb melebar — satu
+        // transisi pendek (Google: panel muncul nyaris seketika)
         akar.setAlpha(0f);
-        akar.animate().alpha(1f).setDuration(180L).start();
-        lembar.setTranslationY(dip(160));
+        akar.animate().alpha(1f).setDuration(150L).start();
+        lembar.setTranslationY(dip(120));
         lembar.animate().translationY(0f)
-                .setDuration(280L)
+                .setDuration(240L)
                 .setInterpolator(new DecelerateInterpolator(1.6f))
                 .start();
         orb.setScaleX(0.82f);
         orb.setScaleY(0.82f);
         orb.animate().scaleX(1f).scaleY(1f)
-                .setDuration(360L)
+                .setDuration(320L)
                 .setInterpolator(new OvershootInterpolator(1.05f))
                 .start();
     }
@@ -181,7 +116,7 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
     @Override
     protected void onResume() {
         super.onResume();
-        if (!layarSiap) return;      // trampoline / dialog izin — tanpa mesin
+        if (!layarSiap) return;
         if (mesin == null) mesin = new LiveEngine(this, this);
         if (!mesinJalan) {
             mesinJalan = true;

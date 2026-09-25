@@ -33,7 +33,7 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
 
     private View akar, lembar;
     private OrbView orb;
-    private TextView tvStatus, tvAnda, tvAvi;
+    private TextView tvSapa, tvStatus, tvAnda, tvAvi;
     private ScrollView gulirPapan;              // papan pesan bersama
     private LinearLayout papanPesan;
     private LiveEngine mesin;
@@ -47,13 +47,17 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
         akar = getLayoutInflater().inflate(R.layout.overlay_avisession, null);
         lembar = akar.findViewById(R.id.lembarSesi);
         orb = akar.findViewById(R.id.orbSesi);
+        tvSapa = akar.findViewById(R.id.tvSapa);
         tvStatus = akar.findViewById(R.id.tvStatusSesi);
         tvAnda = akar.findViewById(R.id.tvAndaSesi);
         tvAvi = akar.findViewById(R.id.tvAviSesi);
         gulirPapan = akar.findViewById(R.id.gulirPapan);
         papanPesan  = akar.findViewById(R.id.papanPesan);
-        // sesi selalu gelap → orb sian elektrik (bukan warna tema)
+        // sesi selalu gelap → orb gradien ala Google (b17)
         orb.setWarnaOrb(0xFF38BDF8);
+        orb.setGradienGoogle(true);
+        // greeting ala "Hi, how can I help?"
+        tvSapa.setText("Hai, " + AviBrain.namaPemilik(getContext()) + "!");
         // SATU PAPAN PESAN: riwayat yang sama persis dengan aplikasi AVI
         PapanPesan.render(getContext(), papanPesan, gulirPapan, true);
 

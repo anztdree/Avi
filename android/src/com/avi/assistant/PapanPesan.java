@@ -30,8 +30,10 @@ public final class PapanPesan {
 
     /** Berapa pesan terakhir yang digambar di lembar compact. */
     private static final int MAKS_BARIS = 8;
-    /** Batas tinggi papan di lembar compact (dp) — sisanya digulir. */
-    private static final int TINGGI_MAKS_DP = 196;
+    /** Batas tinggi papan di lembar compact (dp) — sisanya digulir.
+     *  b17: 196 → 120 — panel ala Google harus RINGKAS; papan lengkap
+     *  tetap ada di aplikasi AVI (satu penyimpanan yang sama). */
+    private static final int TINGGI_MAKS_DP = 120;
 
     private PapanPesan() {}
 

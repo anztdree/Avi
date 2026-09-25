@@ -3,9 +3,11 @@ package com.avi.assistant;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
+import android.graphics.SweepGradient;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -24,6 +26,16 @@ public class OrbView extends View {
 
     private int keadaan = SIAP;
     private int warna = 0xFF38BDF8;   // sian elektrik — identitas Arc
+
+    // b17: mode GRADIEN ala Google Assistant — inti bola mengalir empat
+    // warna (biru muda → sian → indigo → ungu) dan berputar pelan;
+    // tahan tombol home terasa "asisten Google sungguhan".
+    private static final int[] WARNA_GOOGLE = {
+            0xFF7DD3FC, 0xFF38BDF8, 0xFF6366F1, 0xFFA855F7, 0xFF7DD3FC };
+    private boolean gradien = false;
+    private SweepGradient sapuInti;          // cache — dibuat sekali per ukuran
+    private int sapuLebar = -1;
+    private final Matrix matriksSapu = new Matrix();
 
     private float rmsTarget = 0f;   // 0..1 dari onRmsChanged
     private float rmsLembut = 0f;   // smoothing agar gerak halus
@@ -49,6 +61,14 @@ public class OrbView extends View {
     public int getKeadaan() { return keadaan; }
 
     public void setWarnaOrb(int w) { warna = w; invalidate(); }
+
+    /** b17: nyalakan inti gradien ala Google Assistant (berputar pelan,
+     *  lebih cepat saat BERPIKIR). Cahaya luar tetap sian khas AVI. */
+    public void setGradienGoogle(boolean g) {
+        if (gradien == g) return;
+        gradien = g;
+        invalidate();
+    }
 
     /** Masukkan nilai RMS dari RecognitionListener.onRmsChanged (kisar -2..12 dB). */
     public void setRms(float rmsdB) {
@@ -105,8 +125,22 @@ public class OrbView extends View {
 
         // inti
         float rInti = dasar * (0.34f + denyut);
-        kuas.setShader(new RadialGradient(cx - rInti * 0.3f, cy - rInti * 0.35f,
-                rInti * 1.5f, terang(warna), warna, Shader.TileMode.CLAMP));
+        if (gradien) {
+            // b17: shader di-CACHE (dibuat sekali per ukuran) — hanya matrix
+            // rotasi yang diubah tiap frame, hemat di HP low-RAM
+            if (sapuInti == null || sapuLebar != getWidth()) {
+                sapuInti = new SweepGradient(cx, cy, WARNA_GOOGLE, null);
+                sapuLebar = getWidth();
+            }
+            float putaranDetik = keadaan == BERPIKIR ? 110f : 26f;
+            matriksSapu.reset();
+            matriksSapu.postRotate((t * putaranDetik) % 360f, cx, cy);
+            sapuInti.setLocalMatrix(matriksSapu);
+            kuas.setShader(sapuInti);
+        } else {
+            kuas.setShader(new RadialGradient(cx - rInti * 0.3f, cy - rInti * 0.35f,
+                    rInti * 1.5f, terang(warna), warna, Shader.TileMode.CLAMP));
+        }
         canvas.drawCircle(cx, cy, rInti, kuas);
 
         // satelit kecil saat berpikir (berputar)
