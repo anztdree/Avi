@@ -1,42 +1,42 @@
 package com.avi.assistant;
 
-import android.content.Context;
 import android.app.Dialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.service.voice.VoiceInteractionSession;
+import android.view.GestureDetector;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
- * Sesi ASISTEN PERANGKAT AVI — tampilan "Orbit Lembar Bawah": seperti
- * Google Assistant, sesi MUNCUL HANYA DI PANGKAL LAYAR dalam kartu kaca
- * bersudut atas bulat; aplikasi sebelumnya tetap terlihat di atasnya.
+ * Sesi ASISTEN PERANGKAT AVI — jalur VoiceInteractionSession untuk HP
+ * NON-low-RAM (b18). Tampilan & kelakuan IDENTIK dengan
+ * OrbitAssistActivity: lapisan gelap penuh layar ala Google Assistant,
+ * greeting kiri atas, EMPAT TITIK kiri bawah, transkrip + jawaban
+ * polos di kiri tengah, usap ke bawah untuk menutup.
  *
- * Sentuh di luar lembar = sesi menutup (pola lembar bawah). Di dalam
- * lembar: orb yang bernapas, status mesin, ucapan pemilik, dan jawaban
- * AVI di kartu kaca — plus animasi naik lembut setiap kali dipanggil.
+ * Ringan seperti Google: onCreateContentView hanya menempel layout
+ * statis (tanpa render riwayat, tanpa orb 60fps); mesin menyala lewat
+ * akar.post() — SETELAH sesi tergambar. Papan pesan tunggal tetap
+ * hidup lewat penyimpanan riwayat AviBrain (dibaca aplikasi AVI).
  *
- * Isi = mesin Mode Live yang sama (LiveEngine): dengar → pikir → jawab →
- * dengar lagi; hening beberapa detik = AVI pamit lalu sesi menutup
+ * Isi = mesin Mode Live yang sama (LiveEngine): dengar → pikir → jawab
+ * → dengar lagi; hening beberapa detik = AVI pamit lalu sesi menutup
  * sendiri dan pemilik kembali ke aplikasi yang tadi dibuka.
  */
 public class AviSession extends VoiceInteractionSession implements LiveEngine.Pendengar {
 
-    private View akar, lembar;
-    private OrbView orb;
+    private View akar;
+    private TitikEmpat titik;
     private TextView tvSapa, tvStatus, tvAnda, tvAvi;
-    private ScrollView gulirPapan;              // papan pesan bersama
-    private LinearLayout papanPesan;
     private LiveEngine mesin;
+    private GestureDetector usap;
 
     public AviSession(Context context) {
         super(context);
@@ -45,40 +45,42 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
     @Override
     public View onCreateContentView() {
         akar = getLayoutInflater().inflate(R.layout.overlay_avisession, null);
-        lembar = akar.findViewById(R.id.lembarSesi);
-        orb = akar.findViewById(R.id.orbSesi);
+        titik = akar.findViewById(R.id.titikSesi);
         tvSapa = akar.findViewById(R.id.tvSapa);
         tvStatus = akar.findViewById(R.id.tvStatusSesi);
         tvAnda = akar.findViewById(R.id.tvAndaSesi);
         tvAvi = akar.findViewById(R.id.tvAviSesi);
-        gulirPapan = akar.findViewById(R.id.gulirPapan);
-        papanPesan  = akar.findViewById(R.id.papanPesan);
-        // sesi selalu gelap → orb gradien ala Google (b17)
-        orb.setWarnaOrb(0xFF38BDF8);
-        orb.setGradienGoogle(true);
-        // greeting ala "Hi, how can I help?"
-        tvSapa.setText("Hai, " + AviBrain.namaPemilik(getContext()) + "!");
-        // SATU PAPAN PESAN: riwayat yang sama persis dengan aplikasi AVI
-        PapanPesan.render(getContext(), papanPesan, gulirPapan, true);
 
-        // sentuh luar lembar (area transparan) = tutup sesi; klik di
-        // dalam lembar ditelan lembar sendiri (clickable=true di XML)
-        akar.setOnClickListener(v -> finish());
+        tvSapa.setText("Hai, " + AviBrain.namaPemilik(getContext()));
+
+        // Google: ketuk area kosong TIDAK menutup; usap ke bawah menutup
+        usap = new GestureDetector(getContext(),
+                new GestureDetector.SimpleOnGestureListener() {
+            @Override public boolean onFling(MotionEvent a, MotionEvent b,
+                                             float vx, float vy) {
+                if (vy > 0 && vy > Math.abs(vx) * 1.4f && vy > 900f) {
+                    finish();
+                    return true;
+                }
+                return false;
+            }
+        });
+        akar.setOnTouchListener((v, ev) -> usap.onTouchEvent(ev));
+
         akar.findViewById(R.id.btnTutupSesi).setOnClickListener(v -> finish());
-        orb.setOnClickListener(v -> {
+        titik.setOnClickListener(v -> {
             if (mesin == null) return;
-            int k = orb.getKeadaan();
-            if (k == OrbView.BICARA) mesin.potongTts();        // barge-in
-            else if (k == OrbView.SIAP) mesin.dengarkanLagi();
+            int k = titik.getKeadaan();
+            if (k == TitikEmpat.BICARA) mesin.potongTts();      // barge-in
+            else if (k == TitikEmpat.SIAP) mesin.dengarkanLagi();
         });
         return akar;
     }
 
     @Override
     public void onShow(Bundle args, int showFlags) {
-        // jendela transparan menutup seluruh area aplikasi HANYA untuk
-        // menangkap sentuhan; gambarannya milik lembar bawah — aplikasi
-        // di atas lembar tetap terlihat jelas (tanpa dim sistem).
+        // jendela transparan menutup seluruh layar; gambarannya scrim
+        // gelap milik layout — tanpa dim sistem tambahan.
         Dialog jendela = getWindow();
         if (jendela != null && jendela.getWindow() != null) {
             Window w = jendela.getWindow();
@@ -89,35 +91,24 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
                     ViewGroup.LayoutParams.MATCH_PARENT);
         }
 
-        // animasi masuk: lembar naik dari pangkal layar + memudar, orb
-        // melebar dengan pendaran singkat — terasa "dipanggil", bukan muncul.
+        // satu animasi pendek saja — sesi muncul nyaris seketika
         if (akar != null) {
             akar.setAlpha(0f);
-            akar.animate().alpha(1f)
-                    .setDuration(180L)
-                    .start();
-            lembar.setTranslationY(dip(160));
-            lembar.animate().translationY(0f)
-                    .setDuration(280L)
-                    .setInterpolator(new DecelerateInterpolator(1.6f))
-                    .start();
-            orb.setScaleX(0.82f);
-            orb.setScaleY(0.82f);
-            orb.animate().scaleX(1f).scaleY(1f)
-                    .setDuration(360L)
-                    .setInterpolator(new OvershootInterpolator(1.05f))
-                    .start();
+            akar.animate().alpha(1f).setDuration(120L).start();
         }
 
         if (mesin == null) mesin = new LiveEngine(getContext(), this);
-        // riwayat bisa saja baru bertambah dari aplikasi / lembar melayang —
-        // papan pesan bersama digambar ulang tiap sesi dipanggil
-        PapanPesan.render(getContext(), papanPesan, gulirPapan, true);
-        if (mesin.izinMicAda()) {
-            mesin.mulai();
-        } else {
-            status("Izin mikrofon belum ada — buka aplikasi AVI sekali dulu.");
-        }
+        // b18: mesin menyala SETELAH sesi tergambar (sama seperti jalur
+        // activity) — panel tidak pernah menunggu bind SpeechRecognizer
+        akar.post(() -> {
+            Dialog d = getWindow();
+            if (mesin == null || d == null || !d.isShowing()) return;
+            if (mesin.izinMicAda()) {
+                mesin.mulai();
+            } else {
+                status("Izin mikrofon belum ada — buka aplikasi AVI sekali dulu.");
+            }
+        });
     }
 
     @Override
@@ -131,14 +122,10 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
         super.onDestroy();
     }
 
-    private float dip(float nilai) {
-        return nilai * getContext().getResources().getDisplayMetrics().density;
-    }
-
     // ================= peristiwa dari mesin (thread utama) =================
 
     @Override public void keadaan(int k) {
-        if (orb != null) orb.setKeadaan(k);
+        if (titik != null) titik.setKeadaan(k);
     }
 
     @Override public void status(String teks) {
@@ -165,18 +152,13 @@ public class AviSession extends VoiceInteractionSession implements LiveEngine.Pe
         tvAvi.setText(teks);
     }
 
-    /** Giliran selesai — pasangan sudah masuk riwayat bersama → papan
-     *  digambar ulang supaya menyatu dengan aplikasi AVI. */
-    @Override public void giliranBeres() {
-        if (papanPesan != null) {
-            PapanPesan.render(getContext(), papanPesan, gulirPapan, true);
-        }
-        if (tvAnda != null) tvAnda.setVisibility(View.GONE);
-        if (tvAvi != null) tvAvi.setVisibility(View.GONE);
-    }
+    /** Giliran selesai — pasangan sudah tersimpan ke riwayat bersama
+     *  oleh AviBrain.tanyaStream. Transkrip & jawaban dibiarkan terlihat
+     *  sampai giliran berikutnya (ala Google). */
+    @Override public void giliranBeres() { }
 
     @Override public void rms(float rmsdb) {
-        if (orb != null) orb.setRms(rmsdb);
+        if (titik != null) titik.setRms(rmsdb);
     }
 
     @Override public void tetidur() {

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Gagang lembar (drag handle) kecil di puncak lembar bawah sesi. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <corners android:radius="3dp"/>
-    <solid android:color="@color/sesi_samping"/>
-</shape>

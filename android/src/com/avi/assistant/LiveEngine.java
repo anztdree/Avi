@@ -284,7 +284,7 @@ public class LiveEngine {
         });
     }
 
-    /** Dipanggil OrbLayanan saat orb muncul — bangun TTS lebih awal
+    /** Bangun TTS lebih awal — dipanggil saat panel/sesi asisten muncul
      *  supaya ketuk gelembung tidak menunggu inisialisasi mesin suara. */
     public static void panaskanTts(Context context) {
         synchronized (KUNCI_TTS) {
@@ -385,7 +385,7 @@ public class LiveEngine {
 
     private void jalankanGerbang() {
         setKeadaan(OrbView.SIAP);
-        p.status("Verifikasi suara — ucapkan \u201CHai AVI\u201D (sentuh orb = lewat)");
+        p.status("Verifikasi suara — ucapkan \u201CHai AVI\u201D (sentuh titik = lewat)");
         p.transkripAnda("");
         p.teksAvi("");
         if (gerbang != null) gerbang.hentikan();

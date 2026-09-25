@@ -10,10 +10,6 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
-    <!-- Orb melayang di atas aplikasi lain (permintaan pemilik b13): -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <queries>
@@ -102,15 +98,6 @@
             android:exported="true"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_VOICE_INTERACTION"/>
-
-        <!-- ORB MELAYANG: jendela SYSTEM_ALERT_WINDOW + layanan latar
-             depan (tipe mikrofon, dipakai hanya saat lembar obrolan
-             terbuka). Dipanggil trampoline OrbitAssistActivity saat
-             tahan tombol home — aplikasi yang dipakai tidak tertutup. -->
-        <service android:name=".OrbLayanan"
-            android:exported="false"
-            android:label="@string/app_name"
-            android:foregroundServiceType="microphone"/>
 
         <!-- Pengenal suara AVI: WAJIB didaftarkan di meta-data asisten
              (recognitionService) — tanpa itu AVI tidak pernah muncul di

@@ -17,10 +17,9 @@ import java.util.List;
  * SATU papan pesan yang sama."
  *
  * Kelas ini menggambar riwayat percakapan YANG SAMA (AviBrain.muatRiwayat —
- * penyimpanan tunggal aplikasi) ke dalam lembar melayang OrbLayanan,
- * lembar sesi asisten (overlay_avisession / AviSession), dan Mode Live
- * (LiveActivity). Tidak ada lagi papan terpisah: pesan yang diketik di
- * aplikasi muncul di lembar melayang, dan sebaliknya.
+ * penyimpanan tunggal aplikasi) ke dalam Mode Live (LiveActivity) dan
+ * papan di aplikasi AVI (b18: panel asisten tahan-home ala Google
+ * tidak lagi menggambar riwayat — riwayat tetap SATU penyimpanan).
  *
  * Sengaja murni Java + View standar (hukum proyek: tanpa dependensi).
  * Lembar compact hanya menampilkan beberapa pesan terakhir supaya ringan

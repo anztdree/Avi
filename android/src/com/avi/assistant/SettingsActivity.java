@@ -47,11 +47,9 @@ public class SettingsActivity extends Activity {
     private RadioButton rbIngat10, rbIngat20, rbIngat50;
     private EditText etKey, etNamaPemilik;
     private TextView tvModel, tvPetunjukKey, tvRate, tvAsistenStatus, tvSuara, tvKalibrasi;
-    private TextView tvOrb;
     private Switch swTts;
     private SeekBar sbRate;
     private Button bModel, bTes, bBersihkan, bAsisten, bSuara, bSimpan, bKalibrasi;
-    private Button bOrb;
     private RadioGroup rgGerbang;
     private RadioButton rbGMati, rbGLembut, rbGKetat;
     private TextToSpeech ttsProbe;   // hanya untuk menampilkan daftar suara
@@ -106,8 +104,6 @@ public class SettingsActivity extends Activity {
         rbGMati      = findViewById(R.id.rbGMati);
         rbGLembut    = findViewById(R.id.rbGLembut);
         rbGKetat     = findViewById(R.id.rbGKetat);
-        tvOrb        = findViewById(R.id.tvOrb);
-        bOrb         = findViewById(R.id.bOrb);
 
         sbRate.setMax(100);                    // 50% .. 150% dipetakan dari 0..100
         muatNilai();
@@ -170,57 +166,6 @@ public class SettingsActivity extends Activity {
         super.onResume();
         muatStatusAsisten();   // segarkan bila pemilik baru saja mengubah asisten
         muatStatusKalibrasi(); // segarkan bila pemilik baru saja selesai kalibrasi
-        muatStatusOrb();       // segarkan bila pemilik baru memberi izin melayang
-    }
-
-    /** Status orb melayang (izin overlay + layanan hidup). */
-    private void muatStatusOrb() {
-        boolean izin = Settings.canDrawOverlays(this);
-        boolean hidup = OrbLayanan.LAYANAN_HIDUP;
-        if (!izin) {
-            tvOrb.setText("Izin belum diberikan. Tanpa izin ini, tahan tombol "
-                    + "home hanya menampilkan AVI di layarnya sendiri.");
-            bOrb.setText("Beri izin muncul di atas aplikasi");
-        } else if (hidup) {
-            tvOrb.setText("AKTIF — orb AVI sedang melayang di atas aplikasi. "
-                    + "Ketuk orb = obrolan; tahan orb = tutup.");
-            bOrb.setText("Tutup orb melayang");
-        } else {
-            tvOrb.setText("Izin siap — orb muncul otomatis saat Anda menahan "
-                    + "tombol home di aplikasi mana pun.");
-            bOrb.setText("Tampilkan orb sekarang");
-        }
-    }
-
-    private void aksiOrb() {
-        if (!Settings.canDrawOverlays(this)) {
-            try {
-                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:" + getPackageName())));
-                return;
-            } catch (Exception e) {
-                try {
-                    startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
-                    return;
-                } catch (Exception ignored) {}
-            }
-        }
-        try {
-            Intent it = new Intent(this, OrbLayanan.class);
-            if (OrbLayanan.LAYANAN_HIDUP) {
-                it.setAction(OrbLayanan.AKSI_TUTUP);
-                startService(it);
-            } else {
-                it.setAction(OrbLayanan.AKSI_ORB);
-                startForegroundService(it);
-            }
-            Toast.makeText(this, OrbLayanan.LAYANAN_HIDUP
-                    ? "Orb ditutup." : "Orb AVI tampil.", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Layanan melayang gagal dimulai: "
-                    + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
-        }
-        muatStatusOrb();
     }
 
     /** Status kalibrasi suara pemilik (v2 — ProfilSuara terdaftar/terkunci). */
@@ -368,9 +313,6 @@ public class SettingsActivity extends Activity {
         // ===== kalibrasi suara pemilik =====
         bKalibrasi.setOnClickListener(v ->
                 startActivity(new Intent(this, KalibrasiActivity.class)));
-
-        // ===== orb melayang di atas aplikasi lain =====
-        bOrb.setOnClickListener(v -> aksiOrb());
 
         // ===== mode gerbang sapaan (lembut bawaan) =====
         String kal = AviBrain.pref(this).getString("kal_mode", "lembut");

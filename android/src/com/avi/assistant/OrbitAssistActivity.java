@@ -3,50 +3,49 @@ package com.avi.assistant;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
- * PINTU ASISTEN versi PANEL GOOGLE (b17).
+ * PINTU ASISTEN versi UI GOOGLE SEBENARNYA (b18).
  *
- * Keluhan pemilik (2026-09-25): tahan tombol home terasa BERAT dan penuh
- * bug karena rantai trampoline — activity dibuka → startForegroundService
- * (kanal notifikasi + notifikasi + startForeground + jendela overlay +
- * gelembung) → activity ditutup lagi → pemilik HARUS MENGETUK gelembung
- * lagi baru lembar obrolan muncul. Tiga transisi + satu ketukan manual.
+ * Riwayat keluhan pemilik (2026-09-25): b17 masih "berat" dan masih
+ * terasa seperti orb melayang. Audit menemukan akarnya: (1) panel b17
+ * masih kartu mengapung + orb gradien 100dp yang menggambar ulang diri
+ * 60 KALI per detik; (2) riwayat percakapan dirender di onCreate SEBELUM
+ * layar tergambar; (3) mesin (bind SpeechRecognizer) menyala di onResume
+ * yang berjalan SEBELUM frame pertama — panel menunggu semuanya.
  *
- * Google melakukan SATU hal: tahan home → panel asisten LANGSUNG, satu
- * transisi, tanpa layanan, tanpa notifikasi. Sekarang AVI sama persis:
- * activity translucent ini menampilkan panel ala Google Assistant
- * SEKETIKA (kartu mengapung bersudut 28dp, greeting "Hai, [nama]!",
- * orb gradien multi-warna), mesin menyala di onResume — panel tidak
- * pernah menunggu apa pun.
+ * Google saat tahan home melakukan SESUKMUNGKIN HAMPIR NOL: lapisan
+ * gelap penuh layar, greeting kiri atas, EMPAT TITIK kiri bawah, teks
+ * jawaban polos. Tanpa kartu, tanpa orb, tanpa riwayat. Sekarang AVI
+ * persis begitu:
+ *   - onCreate hanya menempel layout (semuanya statis) → frame pertama
+ *     nyaris instan;
+ *   - mesin menyala lewat akar.post() — SETELAH panel benar-benar
+ *     tergambar di layar;
+ *   - TitikEmpat hanya beranimasi SAAT bekerja, mati total saat SIAP;
+ *   - menutup: tombol ✕, usap ke bawah (pola Google), atau AVI tidur.
  *
- * GELEMBUNG ORB TIDAK DIHAPUS: OrbLayanan tetap ada sebagai fitur
- * opt-in dari Pengaturan → Orb melayang (untuk dipakai di atas aplikasi
- * lain), hanya saja TIDAK lagi dipanggil oleh tahan tombol home.
+ * Papan pesan bersama TIDAK digambar di panel (Google juga tidak
+ * menampilkan riwayat) — aturan papan tunggal tetap hidup: giliran
+ * obrolan tetap tersimpan ke riwayat aplikasi AVI lewat AviBrain.
  *
  * Batas platform (riset AOSP 12): di perangkat low-RAM (umum di itel/
  * Transsion) sistem meluncurkan asisten sebagai ACTIVITY ber-intent
- * ACTION_ASSIST — activity inilah titik masuk asisten di HP pemilik.
- * Di HP non-low-RAM, jalur AviSession (VoiceInteractionSession) memakai
- * layout dan mesin yang sama — tampilan identik.
+ * ACTION_ASSIST — activity inilah titik masuk di HP pemilik. Di HP
+ * non-low-RAM jalur AviSession memakai layout & mesin yang sama.
  */
 public class OrbitAssistActivity extends Activity implements LiveEngine.Pendengar {
 
-    private View akar, lembar;
-    private OrbView orb;
+    private View akar;
+    private TitikEmpat titik;
     private TextView tvSapa, tvStatus, tvAnda, tvAvi;
-    private ScrollView gulirPapan;              // papan pesan bersama
-    private LinearLayout papanPesan;
     private LiveEngine mesin;
     private boolean mesinJalan;
-    private boolean layarSiap = false;
+    private GestureDetector usap;
 
     @Override
     protected void attachBaseContext(Context baru) {
@@ -56,75 +55,61 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        siapkanPanelGoogle();   // b17: LANGSUNG — tanpa trampoline/layanan
-    }
+        setContentView(R.layout.overlay_avisession);   // statis — instan
 
-    // ============ panel ala Google: tampil seketika, ringan ============
+        akar = findViewById(R.id.akarSesi);
+        titik = findViewById(R.id.titikSesi);
+        tvSapa = findViewById(R.id.tvSapa);
+        tvStatus = findViewById(R.id.tvStatusSesi);
+        tvAnda = findViewById(R.id.tvAndaSesi);
+        tvAvi = findViewById(R.id.tvAviSesi);
 
-    private void siapkanPanelGoogle() {
-        if (layarSiap) return;
-        layarSiap = true;
-        setContentView(R.layout.overlay_avisession);
+        tvSapa.setText("Hai, " + AviBrain.namaPemilik(this));
 
-        ViewGroup konten = findViewById(android.R.id.content);
-        akar = konten.getChildAt(0);
-        lembar = akar.findViewById(R.id.lembarSesi);
-        orb = akar.findViewById(R.id.orbSesi);
-        tvSapa = akar.findViewById(R.id.tvSapa);
-        tvStatus = akar.findViewById(R.id.tvStatusSesi);
-        tvAnda = akar.findViewById(R.id.tvAndaSesi);
-        tvAvi = akar.findViewById(R.id.tvAviSesi);
-        gulirPapan = akar.findViewById(R.id.gulirPapan);
-        papanPesan  = akar.findViewById(R.id.papanPesan);
+        // Google: ketuk area kosong TIDAK menutup; usap ke bawah menutup
+        usap = new GestureDetector(this,
+                new GestureDetector.SimpleOnGestureListener() {
+            @Override public boolean onFling(MotionEvent a, MotionEvent b,
+                                             float vx, float vy) {
+                if (vy > 0 && vy > Math.abs(vx) * 1.4f && vy > 900f) {
+                    pamit();
+                    return true;
+                }
+                return false;
+            }
+        });
+        akar.setOnTouchListener((v, ev) -> usap.onTouchEvent(ev));
 
-        // sesi selalu gelap → orb gradien ala Google (b17)
-        orb.setWarnaOrb(0xFF38BDF8);
-        orb.setGradienGoogle(true);
-        // greeting ala "Hi, how can I help?"
-        tvSapa.setText("Hai, " + AviBrain.namaPemilik(this) + "!");
-        // SATU PAPAN PESAN: riwayat yang sama persis dengan aplikasi AVI
-        PapanPesan.render(this, papanPesan, gulirPapan, true);
-
-        // sentuh luar lembar (area transparan) = tutup; klik di dalam
-        // lembar ditelan lembar sendiri (clickable=true di XML)
-        akar.setOnClickListener(v -> finish());
-        akar.findViewById(R.id.btnTutupSesi).setOnClickListener(v -> finish());
-        orb.setOnClickListener(v -> {
+        findViewById(R.id.btnTutupSesi).setOnClickListener(v -> pamit());
+        titik.setOnClickListener(v -> {
             if (mesin == null) return;
-            int k = orb.getKeadaan();
-            if (k == OrbView.BICARA) mesin.potongTts();        // barge-in
-            else if (k == OrbView.SIAP) mesin.dengarkanLagi();
+            int k = titik.getKeadaan();
+            if (k == TitikEmpat.BICARA) mesin.potongTts();      // barge-in
+            else if (k == TitikEmpat.SIAP) mesin.dengarkanLagi();
         });
 
-        // animasi masuk: kartu naik dari pangkal + orb melebar — satu
-        // transisi pendek (Google: panel muncul nyaris seketika)
+        // satu animasi pendek saja — panel muncul nyaris seketika
         akar.setAlpha(0f);
-        akar.animate().alpha(1f).setDuration(150L).start();
-        lembar.setTranslationY(dip(120));
-        lembar.animate().translationY(0f)
-                .setDuration(240L)
-                .setInterpolator(new DecelerateInterpolator(1.6f))
-                .start();
-        orb.setScaleX(0.82f);
-        orb.setScaleY(0.82f);
-        orb.animate().scaleX(1f).scaleY(1f)
-                .setDuration(320L)
-                .setInterpolator(new OvershootInterpolator(1.05f))
-                .start();
+        akar.animate().alpha(1f).setDuration(120L).start();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (!layarSiap) return;
         if (mesin == null) mesin = new LiveEngine(this, this);
         if (!mesinJalan) {
             mesinJalan = true;
-            if (mesin.izinMicAda()) {
-                mesin.mulai();
-            } else {
-                status("Izin mikrofon belum ada — buka aplikasi AVI sekali dulu.");
-            }
+            // b18: mesin menyala SETELAH frame pertama tergambar —
+            // dulu onResume langsung bind SpeechRecognizer sehingga
+            // panel tiba lambat ("berat") di low-RAM
+            akar.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (mesin.izinMicAda()) {
+                    mesin.mulai();
+                } else {
+                    status("Izin mikrofon belum ada — buka aplikasi AVI sekali dulu.");
+                }
+            });
         }
     }
 
@@ -141,14 +126,12 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
         super.onDestroy();
     }
 
-    private float dip(float nilai) {
-        return nilai * getResources().getDisplayMetrics().density;
-    }
+    private void pamit() { finish(); }
 
     // ================= peristiwa dari mesin (thread utama) =================
 
     @Override public void keadaan(int k) {
-        if (orb != null) orb.setKeadaan(k);
+        if (titik != null) titik.setKeadaan(k);
     }
 
     @Override public void status(String teks) {
@@ -175,21 +158,15 @@ public class OrbitAssistActivity extends Activity implements LiveEngine.Pendenga
         tvAvi.setText(teks);
     }
 
-    /** Giliran selesai — pasangan sudah masuk riwayat bersama → papan
-     *  digambar ulang supaya menyatu dengan aplikasi AVI. */
-    @Override public void giliranBeres() {
-        if (papanPesan != null) {
-            PapanPesan.render(this, papanPesan, gulirPapan, true);
-        }
-        if (tvAnda != null) tvAnda.setVisibility(View.GONE);
-        if (tvAvi != null) tvAvi.setVisibility(View.GONE);
-    }
+    /** Giliran selesai — pasangan sudah tersimpan ke riwayat bersama
+     *  oleh AviBrain.tanyaStream. Transkrip & jawaban dibiarkan terlihat
+     *  sampai giliran berikutnya (ala Google); papan lengkap ada di
+     *  aplikasi AVI. */
+    @Override public void giliranBeres() { }
 
     @Override public void rms(float rmsdb) {
-        if (orb != null) orb.setRms(rmsdb);
+        if (titik != null) titik.setRms(rmsdb);
     }
 
-    @Override public void tetidur() {
-        finish();
-    }
+    @Override public void tetidur() { pamit(); }
 }
