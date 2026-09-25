@@ -79,12 +79,13 @@ public class LiveEngine {
     private static TextToSpeech ttsBersama;
     private static boolean ttsBersamaSiap = false;
 
-    // ==== cache verifikasi gerbang sapa (perbaikan kelambatan b14) ====
- // Setelah pemilik lolos "Hai AVI", gerbang TIDAK diulang di setiap
-    // lembar dibuka selama 15 menit — dulu tiap buka lembar harus
-    // verifikasi ulang (3-8 detik sebelum bisa bicara).
+    // ==== cache verifikasi gerbang sapa (b14, DIPANGKAS di b15) ====
+    // b14: cache 15 menit demi kecepatan - tapi pemilik melapor kalibrasi
+    // terasa "pajangan" karena gerbang nyaris tidak pernah menyala. b15:
+    // dipangkas jadi 3 menit - hampir SETIAP bangun diverifikasi (pola
+    // Google: tiap wake dicek), obrolan lanjutan dalam 3 menit tetap instan.
     private static volatile long lolosSampaiMs = 0L;
-    private static final long USIA_VERIFIKASI_MS = 15L * 60L * 1000L;
+    private static final long USIA_VERIFIKASI_MS = 3L * 60L * 1000L;
 
     private final Context ctx;
     private final Pendengar p;

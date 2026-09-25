@@ -381,7 +381,10 @@ public class SettingsActivity extends Activity {
             if (sedangMengisi) return;
             String mode = id == R.id.rbGMati ? "mati"
                     : id == R.id.rbGKetat ? "ketat" : "lembut";
-            AviBrain.pref(this).edit().putString("kal_mode", mode).apply();
+            AviBrain.pref(this).edit()
+                    .putString("kal_mode", mode)
+                    .putBoolean("kal_mode_dipilih", true)   // b15: pilihan manual
+                    .apply();                                // tidak ditimpa wizard
             muatStatusKalibrasi();   // status ikut menampilkan gerbang
         });
 

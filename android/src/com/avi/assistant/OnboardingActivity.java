@@ -1,6 +1,7 @@
 package com.avi.assistant;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -180,6 +181,28 @@ public class OnboardingActivity extends Activity {
 
     private void selesai() {
         AviBrain.pref(this).edit().putBoolean("onboarding_done", true).apply();
+        // b15: bila suara pemilik belum terdaftar, tawarkan WIZARD kalibrasi
+        // sekarang (pola Google: Voice Match ditawarkan di setup awal).
+        if (!ProfilSuara.ada(this)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Kunci AVI dengan suara Anda")
+                    .setMessage("Tanpa kalibrasi, AVI tidak bisa membedakan "
+                            + "Anda dari orang lain. Jalankan wizard pendaftaran "
+                            + "suara sekarang? Frasanya pendek — kurang dari "
+                            + "dua menit.")
+                    .setPositiveButton("Ya, daftar sekarang", (d, w) -> {
+                        startActivity(new Intent(this, KalibrasiActivity.class));
+                        finish();
+                    })
+                    .setNegativeButton("Nanti", (d, w) -> pesanSiap())
+                    .setCancelable(false)
+                    .show();
+            return;
+        }
+        pesanSiap();
+    }
+
+    private void pesanSiap() {
         Toast.makeText(this, "AVI siap, " + AviBrain.namaPemilik(this) + "!",
                 Toast.LENGTH_SHORT).show();
         finish();

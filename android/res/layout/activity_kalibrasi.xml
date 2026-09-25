@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    KALIBRASI SUARA v2 — pendaftaran suara pemilik ala "Voice Match".
-    Tiga keadaan dalam SATU layar:
-      A) Belum terdaftar  — undangan + satu tombol Mulai.
-      B) Pendaftaran      — alur otomatis 3 langkah, tanpa tombol,
-                            instruksi berganti sendiri.
-      C) TERKUNCI         — suara terdaftar; hanya Reset ulang / Hapus.
+    KALIBRASI SUARA v3 — WIZARD pendaftaran ala "Voice Match" (b15).
+    Enam langkah: selamat datang → ruangan → frasa pendek 1 (3 take)
+    → frasa pendek 2 (3 take) → sapaan "Hai AVI" (4 take) → UJI TAMU
+    (orang lain HARUS ditolak). Selesai = TERKUNCI (Reset/Hapus saja).
     Gaya visual menyatu dengan Pengaturan (tema Arc cerah).
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"

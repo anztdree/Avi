@@ -20,8 +20,9 @@ import java.nio.ByteOrder;
  * (pelajaran dari KalibrasiActivity b11).
  *
  * Alur per percobaan: tunggu onset suara (VAD berbasis ambang ruangan
- * hasil kalibrasi) → potong ucapan saat hening sejenak (±0,75 dtk) atau
- * batas 3,5 dtk → hitung skor pembicara (ProfilSuara) + skor frasa
+ * hasil kalibrasi) → potong ucapan saat hening sejenak (±0,5 dtk — b15:
+ * dipendekkan dari 0,75 dtk agar verifikasi terasa instan) atau batas
+ * 3,5 dtk → hitung skor pembicara (ProfilSuara) + skor frasa
  * (KunciSapa/DTW) → putuskan.
  *
  * Mode (pref "kal_mode"):
@@ -47,8 +48,8 @@ public final class GerbangSapa {
     private static final int BLOK = 512;               // 32 ms @16 kHz
     private static final long TUNGGU_ONSET_MS = 8000;
     private static final long MAKS_UCAP_MS = 3500;
-    private static final long HENING_TUTUP_MS = 750;
-    private static final long POST_DELAY_MS = 150;     // pastikan mic sudah lepas
+    private static final long HENING_TUTUP_MS = 500;   // b15: 750→500 (instan)
+    private static final long POST_DELAY_MS = 120;     // pastikan mic sudah lepas
 
     private final Context ctx;
     private final Panggilan p;
